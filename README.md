@@ -9,6 +9,7 @@ The current version is shown at the bottom of the page.
 
 Link to a preview directly with `https://ogpreview.github.io/url/<url-encoded link>` (same format as opengraph.xyz) or `?url=<link>`.
 
+- **5.0.0** (2026-10-28): Landing page: hero with large URL box and example links, live showcase drawn by the app's preview code, platforms strip, features, how it works, FAQ and a call-to-action band.
 - **4.2.0** (2026-10-28): Mobile view shows a full phone mockup with each app's top bar and gray placeholder content around the link preview; PNG exports include the whole phone.
 - **4.1.0** (2026-10-28): Footer with links to the Open Graph spec, platform sharing guides and official debuggers.
 - **4.0.0** (2026-10-28): Minimal monospace redesign (JetBrains Mono, stone palette, flat cards) from the design handoff; checks summary and fallback info; over-limit notes on fields; outline tag chips; Download all PNGs now saves one zip.

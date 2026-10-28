@@ -100,6 +100,72 @@
         .footer-links a { color: var(--ink); text-decoration: underline; text-decoration-color: #d4d4d4; text-underline-offset: 4px; }
         .footer-links a:hover { text-decoration-color: var(--ink); }
 
+        /* ---------- Landing ---------- */
+        .hero { position: relative; overflow: hidden; }
+        .hero::before {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background-image: radial-gradient(#d6d3d1 1px, transparent 1px);
+            background-size: 22px 22px;
+            -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%);
+            mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%);
+        }
+        .eyebrow {
+            display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; border-radius: 999px;
+            background: #fff; box-shadow: inset 0 0 0 1px var(--border); font-size: 12px; color: var(--muted);
+        }
+        .eyebrow .live { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px #ecfccb; }
+        .display {
+            margin: 24px 0 0; font-weight: 600; letter-spacing: -.045em; line-height: 1.08;
+            font-size: clamp(38px, 7vw, 76px);
+        }
+        .display em { font-style: normal; color: var(--muted-2); }
+        .lede { margin: 24px auto 0; max-width: 560px; font-size: 15px; line-height: 24px; color: var(--muted); }
+        .hero-form {
+            display: flex; gap: 6px; padding: 6px; border-radius: 4px; background: #fff;
+            box-shadow: 0 0 0 1px var(--border), 0 12px 32px -12px rgba(28, 25, 23, .18);
+        }
+        .hero-form .input { box-shadow: none; height: 46px; font-size: 14px; }
+        .hero-form .btn-primary { height: 46px; padding: 0 20px; }
+        .chip-link {
+            font: inherit; font-size: 12px; color: var(--muted); background: #fff; border: 0; cursor: pointer;
+            padding: 3px 9px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--border);
+        }
+        .chip-link:hover { color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+        .showcase {
+            position: relative; border-radius: 6px; background: #f5f5f4; box-shadow: inset 0 0 0 1px var(--border);
+            overflow: hidden;
+        }
+        .float-card { box-shadow: 0 24px 48px -20px rgba(28, 25, 23, .28); border-radius: 4px; background: #fff; }
+        .phone-scale { width: 405px; transform: scale(.62); transform-origin: top left; }
+        .phone-slot { width: 251px; height: 520px; flex-shrink: 0; }
+        .kicker { font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-2); }
+        .h2 { margin: 12px 0 0; font-size: clamp(26px, 4vw, 40px); font-weight: 600; letter-spacing: -.04em; line-height: 1.1; }
+        .feature { padding: 28px; background: #fff; }
+        .feature h3 { margin: 14px 0 6px; font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+        .feature p { margin: 0; color: var(--muted); font-size: 13px; line-height: 21px; }
+        .feature .num { font-size: 11px; color: var(--muted-2); letter-spacing: .08em; }
+        .grid-lines { display: grid; gap: 1px; background: var(--border); box-shadow: 0 0 0 1px var(--border); border-radius: 4px; overflow: hidden; }
+        .step-num {
+            width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+            background: var(--ink); color: #fff; font-size: 12px; font-weight: 600;
+        }
+        .faq details { border-top: 1px solid var(--border); padding: 18px 0; }
+        .faq details:last-child { border-bottom: 1px solid var(--border); }
+        .faq summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 16px; font-weight: 500; font-size: 14px; }
+        .faq summary::-webkit-details-marker { display: none; }
+        .faq summary::after { content: '+'; color: var(--muted-2); font-weight: 400; }
+        .faq details[open] summary::after { content: '–'; }
+        .faq details p { margin: 10px 0 0; color: var(--muted); line-height: 22px; max-width: 640px; }
+        .cta-band { background: var(--ink); color: #fafaf9; border-radius: 6px; position: relative; overflow: hidden; }
+        .cta-band::before {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background-image: radial-gradient(#292524 1px, transparent 1px); background-size: 22px 22px;
+        }
+        .cta-band .hero-form { background: #1c1917; box-shadow: 0 0 0 1px #44403c; }
+        .cta-band .input { background: transparent; color: #fafaf9; }
+        .cta-band .btn-primary { background: #fafaf9; color: var(--ink); }
+        .cta-band .btn-primary:hover { background: #e7e5e4; }
+
         .col-side { flex: 1 1 320px; min-width: 0; max-width: 100%; }
         .col-main { flex: 2 1 480px; min-width: 0; max-width: 100%; }
 
@@ -126,7 +192,7 @@
                 <span style="width:10px; height:10px; border-radius:50%; background: var(--ink)"></span>
                 <span style="font-weight:600; letter-spacing:.02em">og/preview</span>
             </a>
-            <form id="urlForm" class="flex gap-2 min-w-0" style="flex: 1 1 320px">
+            <form id="urlForm" class="hidden flex gap-2 min-w-0" style="flex: 1 1 320px">
                 <label for="url" class="sr-only">URL</label>
                 <input type="text" id="url" name="url" placeholder="https://example.com/some-page" autocomplete="url"
                        class="input flex-1 min-w-0" style="height:38px; padding: 0 12px" required>
@@ -135,9 +201,105 @@
         </div>
     </header>
 
-    <div class="w-full max-w-6xl mx-auto px-6">
+    <div id="statusRow" class="hidden w-full max-w-6xl mx-auto px-6">
         <p id="status" class="hint pt-6" aria-live="polite"></p>
-        <p id="empty" class="hint pt-4 pb-16">Paste a link to see how it looks when shared on Google, Facebook, X, LinkedIn, Discord, Slack and WhatsApp.</p>
+    </div>
+
+    <div id="landing" class="w-full">
+        <section class="hero">
+            <div class="relative max-w-6xl mx-auto px-6 pt-16 sm:pt-24 pb-12 text-center">
+                <span class="eyebrow"><span class="live"></span>Free · no sign-up · 7 platforms</span>
+                <h1 class="display">See your link<br><em>before</em> everyone else does.</h1>
+                <p class="lede">Paste any URL to preview how it looks when shared on Google, Facebook, X, LinkedIn, Discord, Slack and WhatsApp. Check the tags, fix them, and export the previews.</p>
+                <form id="heroForm" class="hero-form mt-8 mx-auto" style="max-width: 640px">
+                    <label for="heroUrl" class="sr-only">URL</label>
+                    <input type="text" id="heroUrl" placeholder="Paste a link, e.g. github.com" autocomplete="url" class="input flex-1 min-w-0" required>
+                    <button type="submit" id="heroBtn" class="btn-primary">Check →</button>
+                </form>
+                <p id="heroStatus" class="hint mt-3" aria-live="polite"></p>
+                <div class="mt-4 flex flex-wrap justify-center items-center gap-2 hint">
+                    <span>Try</span>
+                    <button type="button" class="chip-link" data-example="https://github.com">github.com</button>
+                    <button type="button" class="chip-link" data-example="https://www.theverge.com">theverge.com</button>
+                    <button type="button" class="chip-link" data-example="https://love.allwomenstalk.com/wake-up-love-messages/">allwomenstalk.com</button>
+                </div>
+            </div>
+
+            <div class="relative max-w-6xl mx-auto px-6 pb-20">
+                <div class="showcase">
+                    <div class="flex items-center justify-between px-5 py-3" style="border-bottom: 1px solid var(--border); background: #fff">
+                        <span class="flex gap-1.5"><i style="width:9px;height:9px;border-radius:50%;background:#e7e5e4;display:block"></i><i style="width:9px;height:9px;border-radius:50%;background:#e7e5e4;display:block"></i><i style="width:9px;height:9px;border-radius:50%;background:#e7e5e4;display:block"></i></span>
+                        <span class="hint">og/preview · sunday.example.com/issue-42</span>
+                        <span style="width:39px"></span>
+                    </div>
+                    <div id="showcase" class="flex flex-wrap justify-center items-start gap-8 p-6 sm:p-10"></div>
+                </div>
+            </div>
+        </section>
+
+        <section style="background:#fff; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border)">
+            <div class="max-w-6xl mx-auto px-6 py-6 flex flex-wrap justify-center items-center gap-x-8 gap-y-2">
+                <span class="kicker">Previews for</span>
+                <span>Google</span><span>Facebook</span><span>X</span><span>LinkedIn</span><span>Discord</span><span>Slack</span><span>WhatsApp</span>
+            </div>
+        </section>
+
+        <section class="max-w-6xl mx-auto px-6 py-20 sm:py-28">
+            <div class="max-w-2xl">
+                <span class="kicker">What it does</span>
+                <h2 class="h2">Everything between your &lt;head&gt; and their feed.</h2>
+            </div>
+            <div class="grid-lines mt-12 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                <div class="feature"><span class="num">01</span><h3>Seven platforms, one paste</h3><p>Google, Facebook, X, LinkedIn, Discord, Slack and WhatsApp, each drawn the way that platform draws link cards.</p></div>
+                <div class="feature"><span class="num">02</span><h3>Desktop and phone</h3><p>Switch to Mobile to see each card inside a phone, in the feed, chat or search results where people will actually meet it.</p></div>
+                <div class="feature"><span class="num">03</span><h3>Checks that explain</h3><p>Title and description length, image size, and missing tags, with the fallback each platform will use instead.</p></div>
+                <div class="feature"><span class="num">04</span><h3>Edit live</h3><p>Change the title, description or image and every preview updates as you type. Reset brings back what the page has.</p></div>
+                <div class="feature"><span class="num">05</span><h3>Export PNGs</h3><p>Download any preview as a crisp 2× image, or all of them in one zip, for reviews, decks and tickets.</p></div>
+                <div class="feature"><span class="num">06</span><h3>Copy-ready tags</h3><p>Get the Open Graph and X tags for your edits, ready to paste into your page's &lt;head&gt;.</p></div>
+            </div>
+        </section>
+
+        <section style="background:#fff; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border)">
+            <div class="max-w-6xl mx-auto px-6 py-20 sm:py-28 grid gap-12 lg:grid-cols-3">
+                <div>
+                    <span class="kicker">How it works</span>
+                    <h2 class="h2">Three steps. No account.</h2>
+                </div>
+                <ol class="lg:col-span-2 grid gap-10 sm:grid-cols-3" style="list-style:none; margin:0; padding:0">
+                    <li><span class="step-num">1</span><h3 class="mt-4" style="font-weight:600">Paste a link</h3><p class="mt-2" style="color:var(--muted); line-height:21px">Any public page. We read its &lt;title&gt;, description, og: and twitter: tags.</p></li>
+                    <li><span class="step-num">2</span><h3 class="mt-4" style="font-weight:600">Review the cards</h3><p class="mt-2" style="color:var(--muted); line-height:21px">See every platform side by side, on desktop or phone, with checks for what's missing.</p></li>
+                    <li><span class="step-num">3</span><h3 class="mt-4" style="font-weight:600">Fix and share</h3><p class="mt-2" style="color:var(--muted); line-height:21px">Tweak the copy, copy the tags, export PNGs, or share a link to the preview.</p></li>
+                </ol>
+            </div>
+        </section>
+
+        <section class="max-w-6xl mx-auto px-6 py-20 sm:py-28 grid gap-12 lg:grid-cols-3">
+            <div>
+                <span class="kicker">FAQ</span>
+                <h2 class="h2">Good questions.</h2>
+            </div>
+            <div class="faq lg:col-span-2">
+                <details><summary>What is Open Graph?</summary><p>A set of &lt;meta&gt; tags (og:title, og:description, og:image and friends) that tell social platforms and chat apps what to show when someone shares your link. X adds its own twitter: tags on top.</p></details>
+                <details><summary>I fixed my tags. Why does Facebook still show the old card?</summary><p>Platforms cache previews, sometimes for days. Use the official debuggers linked below (Facebook Sharing Debugger, LinkedIn Post Inspector) to make them fetch your page again.</p></details>
+                <details><summary>Are these exactly what each platform shows?</summary><p>They're close approximations of each platform's current link cards. Platforms change their designs and crop images in their own ways, so treat them as a reliable guide rather than a pixel-perfect copy.</p></details>
+                <details><summary>Do you store the links I check?</summary><p>No. Everything runs in your browser. The page is fetched through a small proxy only to get around browser restrictions, and nothing is saved.</p></details>
+                <details><summary>Can I share a preview with my team?</summary><p>Yes. The address bar updates to og/preview's /url/ link for the page you checked; send it and they'll see the same previews.</p></details>
+            </div>
+        </section>
+
+        <section class="max-w-6xl mx-auto px-6 pb-24">
+            <div class="cta-band px-6 py-16 sm:py-20 text-center">
+                <div class="relative">
+                    <h2 class="h2">Check a link now.</h2>
+                    <p class="mt-3" style="color:#a8a29e">It takes about a second.</p>
+                    <form id="ctaForm" class="hero-form mt-8 mx-auto" style="max-width: 560px">
+                        <label for="ctaUrl" class="sr-only">URL</label>
+                        <input type="text" id="ctaUrl" placeholder="https://" autocomplete="url" class="input flex-1 min-w-0" required>
+                        <button type="submit" class="btn-primary">Check →</button>
+                    </form>
+                </div>
+            </div>
+        </section>
     </div>
 
     <main id="result" class="hidden w-full max-w-6xl mx-auto px-6 pt-4 pb-20 flex flex-wrap items-start gap-10">
@@ -235,7 +397,7 @@
 
     <script>
         // Bump on every change so you can confirm the live site is updated.
-        const VERSION = '4.2.0';
+        const VERSION = '5.0.0';
         const UPDATED = '2026-10-28';
         document.getElementById('version').textContent = `v${VERSION} · updated ${UPDATED}`;
 
@@ -688,9 +850,9 @@
             },
         };
 
-        function phoneFrame(platform, body) {
+        function phoneFrame(platform, body, m = meta) {
             const dark = platform.dark;
-            const screen = SCREENS[platform.name](meta, body);
+            const screen = SCREENS[platform.name](m, body);
             const fg = dark ? '#f2f3f5' : '#0a0a0a';
             const button = (side, top, height) => h('div', { style: `position:absolute; ${side}:0; top:${top}px; width:3px; height:${height}px; border-radius:2px; background:#44403c` });
 
@@ -1006,7 +1168,7 @@
             renderFields();
             renderTagTable();
             renderLive();
-            $('empty').classList.add('hidden');
+            showApp();
             $('result').classList.remove('hidden');
         }
 
@@ -1032,8 +1194,24 @@
         // ---------- Main ----------
 
         function setStatus(text, isError = false) {
-            $('status').textContent = text;
-            $('status').style.color = isError ? 'var(--error)' : '';
+            for (const el of [$('status'), $('heroStatus')]) {
+                el.textContent = text;
+                el.style.color = isError ? 'var(--error)' : '';
+            }
+        }
+
+        // The landing shows until a link has been checked; then the header form takes over.
+        function showApp() {
+            $('landing').classList.add('hidden');
+            $('urlForm').classList.remove('hidden');
+            $('statusRow').classList.remove('hidden');
+        }
+
+        function setLoading(loading) {
+            for (const btn of [$('submitBtn'), $('heroBtn')]) {
+                btn.disabled = loading;
+                btn.textContent = loading ? 'Checking…' : 'Check →';
+            }
         }
 
         async function lookup(input) {
@@ -1046,10 +1224,10 @@
             }
 
             $('url').value = url;
+            $('heroUrl').value = url;
             setRoute(url);
             setStatus('');
-            $('submitBtn').disabled = true;
-            $('submitBtn').textContent = 'Checking…';
+            setLoading(true);
 
             try {
                 const data = await fetchViaProxies(url) || await fetchViaMicrolink(url);
@@ -1065,8 +1243,7 @@
             } catch (e) {
                 setStatus(`Couldn't fetch metadata for this URL (${e.message}). Try again later.`, true);
             } finally {
-                $('submitBtn').disabled = false;
-                $('submitBtn').textContent = 'Check →';
+                setLoading(false);
             }
         }
 
@@ -1074,6 +1251,59 @@
             event.preventDefault();
             lookup($('url').value);
         });
+
+        $('heroForm').addEventListener('submit', event => {
+            event.preventDefault();
+            lookup($('heroUrl').value);
+        });
+
+        $('ctaForm').addEventListener('submit', event => {
+            event.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            lookup($('ctaUrl').value);
+        });
+
+        for (const chip of document.querySelectorAll('[data-example]')) {
+            chip.addEventListener('click', () => lookup(chip.dataset.example));
+        }
+
+        // ---------- Landing showcase ----------
+        // Drawn with the same preview code as the app, from sample data, so it
+        // stays in sync with how real previews look. Nothing is fetched.
+
+        const SAMPLE_IMAGE = 'data:image/svg+xml,' + encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">' +
+            '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fde68a"/><stop offset=".55" stop-color="#fb7185"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs>' +
+            '<rect width="1200" height="630" fill="url(#g)"/>' +
+            '<circle cx="930" cy="200" r="120" fill="#fff" fill-opacity=".85"/>' +
+            '<text x="80" y="470" font-family="Georgia, serif" font-size="92" fill="#1c1917">The Sunday</text>' +
+            '<text x="80" y="560" font-family="Georgia, serif" font-size="92" font-style="italic" fill="#1c1917">Edition</text></svg>');
+        const SAMPLE_ICON = 'data:image/svg+xml,' + encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#1c1917"/><text x="16" y="22" text-anchor="middle" font-family="Georgia, serif" font-size="18" fill="#fde68a">S</text></svg>');
+        const SAMPLE = {
+            title: 'Slow mornings, good coffee — Issue 42',
+            description: 'A weekly letter about small rituals, long reads and the art of doing less. Join 40,000 readers who start their Sunday here.',
+            image: SAMPLE_IMAGE,
+            url: 'https://sunday.example.com/issue-42',
+            siteName: 'The Sunday Edition',
+            twitterCard: 'summary_large_image',
+            themeColor: '#fb7185',
+            icon: SAMPLE_ICON,
+        };
+
+        function renderShowcase() {
+            const byName = name => PLATFORMS.find(p => p.name === name);
+            const label = text => h('div', { class: 'kicker mb-2' }, text);
+            const column = h('div', { class: 'flex flex-col gap-6 min-w-0', style: 'flex: 1 1 360px; max-width: 520px' },
+                h('div', {}, label('Google'), h('div', { class: 'float-card' }, byName('Google').render(SAMPLE, false))),
+                h('div', {}, label('X'), byName('X (Twitter)').render(SAMPLE, false)));
+            const slack = byName('Slack');
+            const phone = h('div', { class: 'hidden md:block' },
+                label('Slack · mobile'),
+                h('div', { class: 'phone-slot' },
+                    h('div', { class: 'phone-scale' }, phoneFrame(slack, slack.render(SAMPLE, true), SAMPLE))));
+            $('showcase').replaceChildren(column, phone);
+        }
 
         for (const btn of document.querySelectorAll('[data-view]')) {
             btn.addEventListener('click', () => {
@@ -1109,7 +1339,12 @@
         $('copyTags').addEventListener('click', () => copyText($('copyTags'), metaTagsCode(), 'Copy'));
 
         const start = initialUrl();
-        if (start) lookup(start);
+        if (start) {
+            showApp();
+            lookup(start);
+        } else {
+            renderShowcase();
+        }
     </script>
 </body>
 </html>
