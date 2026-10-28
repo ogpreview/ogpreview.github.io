@@ -3,96 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open Graph Data Preview</title>
+    <title>og/preview</title>
     <meta name="description" content="Preview how any link looks on Google, Facebook, X, LinkedIn, Discord, Slack and WhatsApp. Check, edit and generate Open Graph meta tags.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
     <style>
+        /* Design tokens (see the design handoff): Tailwind handles layout,
+           these handle the exact colors and type it doesn't ship with. */
+        :root {
+            --ink: #0a0a0a;
+            --muted: #57534e;
+            --muted-2: #78716c;
+            --border: #e7e5e4;
+            --subtle: #f5f5f4;
+            --bg: #fafaf9;
+            --ok: #65a30d;
+            --warn: #d97706;
+            --warn-ink: #b45309;
+            --error: #dc2626;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+            background: var(--bg);
+            color: var(--ink);
+            font-size: 13px;
+            line-height: 20px;
+            letter-spacing: -.01em;
+            -webkit-font-smoothing: antialiased;
+        }
+        ::selection { background: var(--ink); color: #fff; }
+
+        .link {
+            font: inherit; font-size: 11px; color: var(--ink); background: none; border: 0; padding: 0; cursor: pointer;
+            text-decoration: underline; text-decoration-color: #d4d4d4; text-underline-offset: 4px;
+        }
+        .link:hover { text-decoration-color: var(--ink); }
+        .link:disabled { cursor: wait; color: var(--muted-2); }
+
+        .card { background: #fff; border-radius: 2px; box-shadow: 0 0 0 1px var(--border); }
+        .card-head {
+            padding: 18px 24px; border-bottom: 1px solid var(--subtle);
+            display: flex; justify-content: space-between; align-items: center; gap: 12px;
+        }
+        .section-label { margin: 0; font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+        .field-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted-2); letter-spacing: .04em; }
+        .hint { font-size: 12px; color: var(--muted-2); }
+
+        .input {
+            width: 100%; height: 36px; padding: 0 10px; border: 0; border-radius: 2px; outline: 0;
+            box-shadow: inset 0 0 0 1px var(--border); background: #fff; font: inherit; color: var(--ink);
+        }
+        textarea.input { height: auto; padding: 8px 10px; resize: vertical; }
+        .input:focus { box-shadow: inset 0 0 0 1px var(--ink); }
+
+        .btn-primary {
+            flex: 0 0 auto; height: 38px; padding: 0 14px; border: 0; border-radius: 2px;
+            background: var(--ink); color: #fff; font: inherit; letter-spacing: .04em; cursor: pointer;
+        }
+        .btn-primary:hover { background: #404040; }
+        .btn-primary:disabled { background: #404040; cursor: wait; }
+        .btn {
+            border: 0; border-radius: 2px; padding: 7px 12px; background: #fff; font: inherit; color: var(--ink);
+            box-shadow: inset 0 0 0 1px var(--border); cursor: pointer;
+        }
+        .btn:hover { background: var(--bg); }
+        .btn:disabled { cursor: wait; color: var(--muted-2); }
+
+        .seg { display: flex; padding: 2px; border-radius: 2px; background: var(--subtle); }
+        .seg button { border: 0; border-radius: 2px; padding: 5px 12px; background: transparent; font: inherit; font-weight: 500; color: var(--muted-2); cursor: pointer; }
+        .seg button[aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 0 0 1px var(--border); }
+
+        .chip { font-size: 12px; padding: 1px 6px; border-radius: 2px; }
+        .chip-ok { color: #3f6212; box-shadow: inset 0 0 0 1px #d9f99d; }
+        .chip-missing { color: var(--warn-ink); box-shadow: inset 0 0 0 1px #fde68a; }
+
+        .dot { flex: 0 0 6px; height: 6px; margin-top: 7px; border-radius: 50%; }
+        .checks code, .tag-key { font-size: 12px; color: #374151; }
+
+        .code-block {
+            margin: 0; padding: 16px; font-size: 12px; line-height: 18px; overflow-x: auto;
+            background: var(--bg); border-radius: 2px; box-shadow: inset 0 0 0 1px var(--border);
+        }
+
+        .col-side { flex: 1 1 320px; min-width: 0; max-width: 100%; }
+        .col-main { flex: 2 1 480px; min-width: 0; max-width: 100%; }
+
+        /* Platform previews use each platform's own look, not the mono UI. */
+        .pv { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; letter-spacing: normal; line-height: 1.35; }
         .clamp-1, .clamp-2, .clamp-3 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
         .clamp-1 { -webkit-line-clamp: 1; }
         .clamp-2 { -webkit-line-clamp: 2; }
         .clamp-3 { -webkit-line-clamp: 3; }
         .ratio-191 { aspect-ratio: 1.91 / 1; }
         .ratio-1 { aspect-ratio: 1 / 1; }
-        .preview-img { width: 100%; height: 100%; object-fit: cover; display: block; background: #e5e7eb; }
+        .preview-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .striped {
+            background: repeating-linear-gradient(135deg, #fafaf9 0 9px, #e7e5e4 9px 10px);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .striped span { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--muted-2); background: #fff; padding: 4px 8px; border-radius: 4px; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-900">
-    <header class="bg-white border-b border-gray-200">
-        <div class="max-w-6xl mx-auto px-4 py-4">
-            <a href="/" class="text-xl font-bold">Open Graph Preview</a>
-            <form id="urlForm" class="mt-3 flex flex-col sm:flex-row gap-2">
+<body>
+    <header style="background:#fff; border-bottom: 1px solid var(--border)">
+        <div class="max-w-6xl mx-auto px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <a href="/" class="flex items-center gap-2 flex-shrink-0" style="text-decoration:none; color:inherit">
+                <span style="width:10px; height:10px; border-radius:50%; background: var(--ink)"></span>
+                <span style="font-weight:600; letter-spacing:.02em">og/preview</span>
+            </a>
+            <form id="urlForm" class="flex gap-2 min-w-0" style="flex: 1 1 320px">
                 <label for="url" class="sr-only">URL</label>
-                <input type="text" id="url" name="url" placeholder="Paste a link, e.g. example.com/some-page" autocomplete="url"
-                       class="flex-1 border border-gray-300 rounded-md p-2" required>
-                <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md">Check website</button>
+                <input type="text" id="url" name="url" placeholder="https://example.com/some-page" autocomplete="url"
+                       class="input flex-1 min-w-0" style="height:38px; padding: 0 12px" required>
+                <button type="submit" id="submitBtn" class="btn-primary">Check →</button>
             </form>
-            <p id="status" class="mt-2 text-sm text-gray-600" aria-live="polite"></p>
         </div>
     </header>
 
-    <main id="result" class="hidden max-w-6xl mx-auto px-4 py-6">
-        <div class="grid gap-6 lg:grid-cols-5">
-            <!-- Left: editable metadata, checks, tags -->
-            <div class="lg:col-span-2 space-y-6 min-w-0">
-                <section class="bg-white rounded-md shadow p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <h2 class="text-lg font-semibold">Metadata</h2>
-                        <button id="resetBtn" type="button" class="text-sm text-blue-600 hover:underline">Reset edits</button>
-                    </div>
-                    <p class="text-xs text-gray-500 mb-3">Edit the fields to see how the previews and generated tags change.</p>
-                    <div id="fields" class="space-y-3"></div>
-                </section>
+    <div class="max-w-6xl mx-auto px-6">
+        <p id="status" class="hint pt-6" aria-live="polite"></p>
+        <p id="empty" class="hint pt-4">Paste a link to see how it looks when shared on Google, Facebook, X, LinkedIn, Discord, Slack and WhatsApp.</p>
+    </div>
 
-                <section class="bg-white rounded-md shadow p-4">
-                    <h2 class="text-lg font-semibold mb-3">Checks</h2>
-                    <ul id="checks" class="space-y-1 text-sm"></ul>
-                </section>
+    <main id="result" class="hidden max-w-6xl mx-auto px-6 pt-4 pb-20 flex flex-wrap items-start gap-10">
+        <aside class="col-side flex flex-col gap-6">
+            <section class="card">
+                <div class="card-head">
+                    <h2 class="section-label">Metadata</h2>
+                    <button id="resetBtn" type="button" class="link">Reset</button>
+                </div>
+                <div id="fields" class="p-6 flex flex-col gap-5"></div>
+            </section>
 
-                <section class="bg-white rounded-md shadow p-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <h2 class="text-lg font-semibold">All tags found</h2>
-                        <button id="copyJson" type="button" class="text-sm text-blue-600 hover:underline">Copy as JSON</button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm"><tbody id="tagTable"></tbody></table>
-                    </div>
-                    <p id="source" class="mt-2 text-xs text-gray-500"></p>
-                </section>
+            <section class="card">
+                <div class="card-head">
+                    <h2 class="section-label">Checks</h2>
+                    <span id="checksSummary" class="hint"></span>
+                </div>
+                <ul id="checks" class="checks py-2"></ul>
+            </section>
+
+            <section class="card">
+                <div class="card-head">
+                    <h2 class="section-label">Tags found</h2>
+                    <button id="copyJson" type="button" class="link">Copy JSON</button>
+                </div>
+                <div class="px-6 py-4 overflow-x-auto">
+                    <table class="w-full"><tbody id="tagTable"></tbody></table>
+                    <p id="source" class="hint mt-3"></p>
+                </div>
+            </section>
+        </aside>
+
+        <div class="col-main flex flex-col gap-8">
+            <div class="flex flex-wrap justify-between items-center gap-3">
+                <div class="seg" role="group" aria-label="Preview size">
+                    <button type="button" data-view="desktop">Desktop</button>
+                    <button type="button" data-view="mobile">Mobile</button>
+                </div>
+                <button id="downloadAll" type="button" class="btn">Download all PNGs</button>
             </div>
 
-            <!-- Right: platform previews and generated code -->
-            <div class="lg:col-span-3 space-y-6 min-w-0 order-first lg:order-none">
-                <section id="previews">
-                    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-                        <div class="inline-flex bg-gray-200 rounded-lg p-1" role="group" aria-label="Preview size">
-                            <button type="button" data-view="desktop">Desktop</button>
-                            <button type="button" data-view="mobile">Mobile</button>
-                        </div>
-                        <button id="downloadAll" type="button" class="text-sm text-blue-600 hover:underline">Download all PNGs</button>
-                    </div>
-                    <div id="previewList" class="space-y-8"></div>
-                </section>
+            <div id="previewList" class="flex flex-col gap-12"></div>
 
-                <section class="bg-white rounded-md shadow p-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <h2 class="text-lg font-semibold">Generated meta tags</h2>
-                        <button id="copyTags" type="button" class="text-sm text-blue-600 hover:underline">Copy</button>
-                    </div>
-                    <p class="text-xs text-gray-500 mb-2">Paste these into the &lt;head&gt; of your page.</p>
-                    <pre id="metaCode" class="bg-gray-900 text-gray-100 text-xs p-3 rounded-md overflow-x-auto"></pre>
-                </section>
-            </div>
+            <section class="card">
+                <div class="card-head">
+                    <h2 class="section-label">Generated meta tags</h2>
+                    <button id="copyTags" type="button" class="link">Copy</button>
+                </div>
+                <div class="p-6">
+                    <p class="hint mb-3">Paste these into the &lt;head&gt; of your page.</p>
+                    <pre id="metaCode" class="code-block"></pre>
+                </div>
+            </section>
         </div>
     </main>
 
-    <footer class="max-w-6xl mx-auto px-4 py-6 text-center text-xs text-gray-500">
+    <footer class="max-w-6xl mx-auto px-6 pb-8 hint text-center">
         <span id="version"></span>
     </footer>
 
     <script>
         // Bump on every change so you can confirm the live site is updated.
-        const VERSION = '3.1.0';
+        const VERSION = '4.0.0';
         const UPDATED = '2026-10-28';
         document.getElementById('version').textContent = `v${VERSION} · updated ${UPDATED}`;
 
@@ -211,10 +309,11 @@
         let found = null;    // { tags, source } as fetched
         let original = {};   // metadata derived from the fetched tags
         let meta = {};       // current (possibly edited) metadata
+        let viewMode = 'desktop'; // or 'mobile'
 
         const FIELDS = [
-            { key: 'title', label: 'Title', max: 60 },
-            { key: 'description', label: 'Description', max: 160, multiline: true },
+            { key: 'title', label: 'Title', max: 60, over: 'titles get cut off' },
+            { key: 'description', label: 'Description', max: 160, over: 'search results will truncate', multiline: true },
             { key: 'image', label: 'Image URL' },
             { key: 'url', label: 'Page URL' },
             { key: 'siteName', label: 'Site name' },
@@ -226,6 +325,10 @@
                 if (hit) return hit[1];
             }
             return '';
+        }
+
+        function hasTag(key) {
+            return (found?.tags || []).some(([k]) => k === key);
         }
 
         function deriveMeta(tags, url) {
@@ -245,6 +348,17 @@
 
         function hostOf(url) {
             try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return ''; }
+        }
+
+        // Google-style breadcrumb: https://example.com › path › to › page
+        function breadcrumb(url) {
+            try {
+                const u = new URL(url);
+                const parts = u.pathname.split('/').filter(Boolean);
+                return [`${u.protocol}//${u.hostname}`, ...parts].join(' › ');
+            } catch {
+                return url;
+            }
         }
 
         function safeHref(url) {
@@ -270,142 +384,157 @@
             return el;
         }
 
+        function placeholder(text, cls = '') {
+            return h('div', { class: `preview-img striped ${cls}` }, h('span', {}, text));
+        }
+
         function img(src, cls = '') {
-            if (!src) return h('div', { class: `preview-img flex items-center justify-center text-gray-400 text-xs ${cls}` }, 'No image');
+            if (!src) return placeholder('No og:image', cls);
             const el = h('img', { class: `preview-img ${cls}`, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' });
-            el.onerror = () => el.replaceWith(img('', cls));
+            el.onerror = () => el.replaceWith(placeholder("og:image didn't load", cls));
             el.src = src;
             return el;
         }
 
-        function favicon(m, size = 16) {
+        // Site icon in a circle, falling back to the site's first letter.
+        function favicon(m, size = 28) {
+            const letter = (m.siteName || hostOf(m.url) || '?')[0].toUpperCase();
+            const box = h('div', {
+                class: 'flex items-center justify-center flex-shrink-0 overflow-hidden',
+                style: `width:${size}px; height:${size}px; border-radius:50%; background:#f5f5f4; box-shadow: inset 0 0 0 1px #e7e5e4; font-size:${Math.round(size * 0.43)}px; font-weight:600; color:#78716c`,
+            });
             const src = m.icon || `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostOf(m.url))}&sz=64`;
-            const el = h('img', { alt: '', width: size, height: size, class: 'rounded-sm', referrerpolicy: 'no-referrer' });
-            el.onerror = () => { el.style.visibility = 'hidden'; };
-            el.src = src;
-            return el;
+            const icon = h('img', { alt: '', width: Math.round(size * 0.64), height: Math.round(size * 0.64), referrerpolicy: 'no-referrer' });
+            icon.onerror = () => icon.replaceWith(letter);
+            icon.src = src;
+            box.append(icon);
+            return box;
         }
 
         // ---------- Platform previews (approximations of each site's link card) ----------
         // Each platform: which tags it reads, and how its card looks on desktop
         // and on a phone. `dark` platforms get a dark phone frame.
 
+        const RING = 'box-shadow: 0 0 0 1px #e7e5e4';
+
         const PLATFORMS = [
             {
                 name: 'Google', uses: ['title', 'description'],
-                render: (m, mobile) => h('div', { class: `bg-white shadow p-4 ${mobile ? 'rounded-xl' : 'rounded-md'}`, style: 'font-family: arial, sans-serif' },
-                    h('div', { class: 'flex items-center gap-2' },
-                        h('div', { class: 'w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0' }, favicon(m, 18)),
-                        h('div', { class: 'leading-tight min-w-0' },
-                            h('div', { class: 'text-sm clamp-1' }, m.siteName || hostOf(m.url)),
-                            h('div', { class: 'text-xs text-gray-600 clamp-1' }, m.url))),
-                    h('a', { href: safeHref(m.url), target: '_blank', rel: 'noopener noreferrer', class: `block mt-1 hover:underline ${mobile ? 'text-lg clamp-2' : 'text-xl clamp-1'}`, style: 'color:#1a0dab' }, m.title || 'No title'),
+                render: (m, mobile) => h('div', { class: 'pv', style: `background:#fff; border-radius:${mobile ? 12 : 2}px; ${RING}; padding:20px; font-family: arial, sans-serif` },
+                    h('div', { class: 'flex items-center', style: 'gap:10px' },
+                        favicon(m, 28),
+                        h('div', { class: 'min-w-0' },
+                            h('div', { class: 'clamp-1', style: 'font-size:14px; color:#202124' }, m.siteName || hostOf(m.url)),
+                            h('div', { class: 'clamp-1', style: 'font-size:12px; color:#4d5156' }, breadcrumb(m.url)))),
+                    h('a', { href: safeHref(m.url), target: '_blank', rel: 'noopener noreferrer', class: mobile ? 'clamp-2' : 'clamp-1', style: `display:block; margin-top:8px; font-size:${mobile ? 18 : 20}px; line-height:26px; color:#1a0dab; text-decoration:none` }, m.title || 'No title'),
                     mobile
-                        ? h('div', { class: 'flex gap-3 mt-1' },
-                            h('div', { class: 'text-sm clamp-3 flex-1 min-w-0', style: 'color:#4d5156' }, m.description),
-                            m.image && h('div', { class: 'w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden' }, img(m.image)))
-                        : h('div', { class: 'text-sm clamp-2', style: 'color:#4d5156' }, m.description)),
+                        ? h('div', { class: 'flex items-start gap-3', style: 'margin-top:4px' },
+                            // Line clamping is unreliable on a flex item itself, so wrap it.
+                            h('div', { class: 'flex-1 min-w-0' },
+                                h('div', { class: 'clamp-3', style: 'font-size:14px; line-height:22px; color:#4d5156' }, m.description)),
+                            m.image && h('div', { class: 'flex-shrink-0 overflow-hidden', style: 'width:80px; height:80px; border-radius:8px' }, img(m.image)))
+                        : h('div', { class: 'clamp-2', style: 'margin-top:4px; font-size:14px; line-height:22px; color:#4d5156' }, m.description)),
             },
             {
                 name: 'Facebook', uses: ['og:title', 'og:description', 'og:image', 'og:url'],
-                render: (m, mobile) => h('div', { class: 'bg-white overflow-hidden', style: 'font-family: Helvetica, Arial, sans-serif; border: 1px solid #dadde1' },
+                render: (m, mobile) => h('div', { class: 'pv overflow-hidden', style: `background:#fff; border-radius:2px; ${RING}` },
                     h('div', { class: 'ratio-191' }, img(m.image)),
-                    h('div', { class: 'px-3 py-2', style: 'background:#f0f2f5; border-top: 1px solid #dadde1' },
-                        h('div', { class: 'text-xs uppercase clamp-1', style: 'color:#65676b' }, hostOf(m.url)),
-                        h('div', { class: 'font-semibold clamp-2', style: 'color:#050505' }, m.title),
-                        !mobile && h('div', { class: 'text-sm clamp-1', style: 'color:#65676b' }, m.description))),
+                    h('div', { style: 'padding:12px 16px; background:#fafaf9; border-top:1px solid #e7e5e4' },
+                        h('div', { class: 'clamp-1', style: 'font-size:12px; color:#78716c; text-transform:uppercase; letter-spacing:.02em' }, hostOf(m.url)),
+                        h('div', { class: 'clamp-2', style: 'margin-top:2px; font-size:14px; font-weight:500; color:#0a0a0a' }, m.title),
+                        !mobile && h('div', { class: 'clamp-1', style: 'margin-top:2px; font-size:14px; color:#78716c' }, m.description))),
             },
             {
                 name: 'X (Twitter)', uses: ['twitter:card', 'twitter:title', 'twitter:image', 'og:title', 'og:image'],
                 render: m => m.twitterCard === 'summary'
-                    ? h('div', { class: 'bg-white flex rounded-2xl overflow-hidden', style: 'border: 1px solid #cfd9de' },
-                        h('div', { class: 'w-28 flex-shrink-0 ratio-1', style: 'border-right: 1px solid #cfd9de' }, img(m.image)),
-                        h('div', { class: 'p-3 text-sm min-w-0 flex flex-col justify-center' },
+                    ? h('div', { class: 'pv flex overflow-hidden', style: `background:#fff; border-radius:12px; ${RING}` },
+                        h('div', { class: 'flex-shrink-0 ratio-1', style: 'width:112px; border-right:1px solid #e7e5e4' }, img(m.image)),
+                        h('div', { class: 'min-w-0 flex flex-col justify-center', style: 'padding:12px; font-size:14px' },
                             h('div', { class: 'clamp-1', style: 'color:#536471' }, hostOf(m.url)),
                             h('div', { class: 'clamp-1', style: 'color:#0f1419' }, m.title),
                             h('div', { class: 'clamp-2', style: 'color:#536471' }, m.description)))
-                    : h('div', { class: 'bg-white' },
-                        h('div', { class: 'relative rounded-2xl overflow-hidden ratio-191', style: 'border: 1px solid #cfd9de' },
+                    : h('div', { class: 'pv', style: 'background:#fff' },
+                        h('div', { class: 'relative overflow-hidden ratio-191', style: `border-radius:12px; ${RING}` },
                             img(m.image),
-                            h('div', { class: 'absolute bottom-0 left-0 m-3 px-1 rounded text-xs text-white clamp-1', style: 'background: rgba(0,0,0,.77); max-width: 90%' }, m.title)),
-                        h('div', { class: 'text-xs mt-1', style: 'color:#536471' }, `From ${hostOf(m.url)}`)),
+                            h('span', { class: 'absolute clamp-1', style: 'left:12px; bottom:12px; font-size:13px; color:#fff; background:rgba(0,0,0,.7); padding:2px 6px; border-radius:4px; max-width:calc(100% - 24px)' }, m.title)),
+                        h('div', { style: 'margin-top:6px; font-size:13px; color:#78716c' }, `From ${hostOf(m.url)}`)),
             },
             {
                 name: 'LinkedIn', uses: ['og:title', 'og:image', 'og:url'],
-                render: m => h('div', { class: 'bg-white shadow overflow-hidden rounded-md' },
+                render: m => h('div', { class: 'pv overflow-hidden', style: `background:#fff; border-radius:2px; ${RING}` },
                     h('div', { class: 'ratio-191' }, img(m.image)),
-                    h('div', { class: 'px-3 py-2', style: 'background:#eef3f8' },
-                        h('div', { class: 'text-sm font-semibold clamp-2', style: 'color:rgba(0,0,0,.9)' }, m.title),
-                        h('div', { class: 'text-xs clamp-1', style: 'color:rgba(0,0,0,.6)' }, hostOf(m.url)))),
+                    h('div', { style: 'padding:10px 14px; background:#eef3f8' },
+                        h('div', { class: 'clamp-2', style: 'font-size:14px; font-weight:600; color:rgba(0,0,0,.9)' }, m.title),
+                        h('div', { class: 'clamp-1', style: 'font-size:12px; color:rgba(0,0,0,.6)' }, hostOf(m.url)))),
             },
             {
                 name: 'Discord', uses: ['og:site_name', 'og:title', 'og:description', 'og:image', 'theme-color'], dark: true,
-                render: m => h('div', { class: 'p-4 rounded-md', style: 'background:#313338' },
-                    h('div', { class: 'rounded p-3 max-w-md', style: `background:#2b2d31; border-left: 4px solid ${/^#[0-9a-f]{3,8}$/i.test(m.themeColor) ? m.themeColor : '#1e1f22'}` },
-                        m.siteName && h('div', { class: 'text-xs mb-1', style: 'color:#dbdee1' }, m.siteName),
-                        h('a', { href: safeHref(m.url), target: '_blank', rel: 'noopener noreferrer', class: 'font-semibold hover:underline clamp-2', style: 'color:#00a8fc' }, m.title),
-                        h('div', { class: 'text-sm mt-1 clamp-3', style: 'color:#dbdee1' }, m.description),
-                        m.image && h('div', { class: 'mt-3 rounded overflow-hidden ratio-191' }, img(m.image)))),
+                render: m => h('div', { class: 'pv', style: 'padding:16px; border-radius:2px; background:#313338' },
+                    h('div', { style: `max-width:432px; padding:12px; border-radius:4px; background:#2b2d31; border-left:4px solid ${/^#[0-9a-f]{3,8}$/i.test(m.themeColor) ? m.themeColor : '#1e1f22'}` },
+                        m.siteName && h('div', { style: 'font-size:12px; margin-bottom:4px; color:#dbdee1' }, m.siteName),
+                        h('a', { href: safeHref(m.url), target: '_blank', rel: 'noopener noreferrer', class: 'clamp-2', style: 'font-weight:600; color:#00a8fc; text-decoration:none' }, m.title),
+                        h('div', { class: 'clamp-3', style: 'font-size:14px; margin-top:4px; color:#dbdee1' }, m.description),
+                        m.image && h('div', { class: 'overflow-hidden ratio-191', style: 'margin-top:12px; border-radius:4px' }, img(m.image)))),
             },
             {
                 name: 'Slack', uses: ['og:site_name', 'og:title', 'og:description', 'og:image'],
-                render: m => h('div', { class: 'bg-white rounded-md shadow p-4' },
-                    h('div', { class: 'pl-3', style: 'border-left: 4px solid #dddddd' },
-                        h('div', { class: 'flex items-center gap-1 text-sm font-bold' }, favicon(m, 16), m.siteName || hostOf(m.url)),
-                        h('a', { href: safeHref(m.url), target: '_blank', rel: 'noopener noreferrer', class: 'font-bold hover:underline clamp-2', style: 'color:#1264a3' }, m.title),
-                        h('div', { class: 'text-sm clamp-3', style: 'color:#1d1c1d' }, m.description),
-                        m.image && h('div', { class: 'mt-2 rounded overflow-hidden ratio-191', style: 'max-width: 360px' }, img(m.image)))),
+                render: m => h('div', { class: 'pv', style: `background:#fff; border-radius:2px; ${RING}; padding:16px` },
+                    h('div', { style: 'padding-left:12px; border-left:4px solid #dddddd' },
+                        h('div', { class: 'flex items-center gap-2', style: 'font-size:14px; font-weight:700' }, favicon(m, 18), m.siteName || hostOf(m.url)),
+                        h('a', { href: safeHref(m.url), target: '_blank', rel: 'noopener noreferrer', class: 'clamp-2', style: 'margin-top:2px; font-weight:700; color:#1264a3; text-decoration:none' }, m.title),
+                        h('div', { class: 'clamp-3', style: 'font-size:14px; color:#1d1c1d' }, m.description),
+                        m.image && h('div', { class: 'overflow-hidden ratio-191', style: 'margin-top:8px; max-width:360px; border-radius:4px' }, img(m.image)))),
             },
             {
                 name: 'WhatsApp', uses: ['og:title', 'og:description', 'og:image'],
-                render: m => h('div', { class: 'p-4 rounded-md', style: 'background:#efeae2' },
-                    h('div', { class: 'rounded-lg p-1 max-w-sm ml-auto', style: 'background:#d9fdd3' },
-                        h('div', { class: 'rounded-md overflow-hidden', style: 'background:#d1f4cc' },
+                render: m => h('div', { class: 'pv', style: 'padding:16px; border-radius:2px; background:#efeae2' },
+                    h('div', { style: 'max-width:384px; margin-left:auto; padding:4px; border-radius:8px; background:#d9fdd3' },
+                        h('div', { class: 'overflow-hidden', style: 'border-radius:6px; background:#d1f4cc' },
                             m.image && h('div', { class: 'ratio-191' }, img(m.image)),
-                            h('div', { class: 'p-2' },
-                                h('div', { class: 'text-sm font-semibold clamp-2' }, m.title),
-                                h('div', { class: 'text-xs text-gray-600 clamp-2' }, m.description),
-                                h('div', { class: 'text-xs text-gray-500 mt-1' }, hostOf(m.url)))),
-                        h('div', { class: 'text-sm px-1 pt-1 break-all', style: 'color:#027eb5' }, m.url))),
+                            h('div', { style: 'padding:8px' },
+                                h('div', { class: 'clamp-2', style: 'font-size:14px; font-weight:600' }, m.title),
+                                h('div', { class: 'clamp-2', style: 'font-size:12px; color:#4b5563' }, m.description),
+                                h('div', { style: 'font-size:12px; margin-top:4px; color:#6b7280' }, hostOf(m.url)))),
+                        h('div', { style: 'font-size:14px; padding:4px 4px 0; word-break:break-all; color:#027eb5' }, m.url))),
             },
         ];
 
-        let viewMode = 'desktop'; // or 'mobile'
-
         function phoneFrame(platform, body) {
-            const fg = platform.dark ? '#f2f3f5' : '#111827';
-            return h('div', { style: `width: 375px; max-width: 100%; border: 10px solid #111827; border-radius: 36px; overflow: hidden; background: ${platform.dark ? '#313338' : '#f9fafb'}` },
-                h('div', { class: 'flex justify-between px-5 pt-2 pb-1 text-xs font-semibold', style: `color:${fg}` }, h('span', {}, '9:41'), h('span', {}, '5G ▮▮▮')),
-                h('div', { class: 'px-4 py-2 text-sm font-semibold', style: `color:${fg}; border-bottom: 1px solid ${platform.dark ? '#1e1f22' : '#e5e7eb'}` }, platform.name),
-                h('div', { class: 'p-3' }, body));
+            const dark = platform.dark;
+            const fg = dark ? '#f2f3f5' : '#0a0a0a';
+            // Real borders (not box-shadow rings) so the PNG export includes the whole frame.
+            return h('div', { style: 'width:393px; max-width:100%; padding:8px; border-radius:36px; background:#fff; border:1px solid #e7e5e4' },
+                h('div', { style: `border-radius:28px; overflow:hidden; background:${dark ? '#313338' : '#fafaf9'}; border:1px solid #e7e5e4` },
+                    h('div', { class: 'flex justify-between', style: `padding:10px 20px 4px; font-size:11px; font-weight:500; color:${fg}` }, h('span', {}, '9:41'), h('span', {}, '5G ▮▮▮')),
+                    h('div', { class: 'section-label', style: `padding:6px 16px 10px; color:${dark ? '#b5bac1' : '#57534e'}; border-bottom:1px solid ${dark ? '#1e1f22' : '#e7e5e4'}` }, platform.name),
+                    h('div', { style: 'padding:12px' }, body)));
         }
 
-        // Tags this platform reads, green if the page has them, red if it doesn't.
-        function usesLine(platform) {
-            const tags = found?.tags || [];
-            return h('div', { class: 'flex flex-wrap items-center gap-1 mt-2 text-xs' },
-                h('span', { class: 'text-gray-500 mr-1' }, 'Reads:'),
+        // Tags this platform reads, outlined green if the page has them, amber if not.
+        function readsLine(platform) {
+            return h('div', { class: 'flex flex-wrap items-center hint', style: 'gap:6px' },
+                'Reads',
                 platform.uses.map(k => {
-                    const present = tags.some(([key]) => key === k);
+                    const present = hasTag(k);
                     return h('span', {
-                        class: `font-mono px-1 rounded ${present ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`,
+                        class: `chip ${present ? 'chip-ok' : 'chip-missing'}`,
                         title: present ? 'Found on the page' : 'Missing on the page; a fallback is used',
                     }, k);
                 }));
         }
 
-        function previewCard(platform) {
+        function previewSection(platform) {
             const mobile = viewMode === 'mobile';
             const body = platform.render(meta, mobile);
             const target = mobile ? phoneFrame(platform, body) : body;
-            const button = h('button', { type: 'button', class: 'text-xs text-blue-600 hover:underline' }, 'Download PNG');
-            button.addEventListener('click', () => exportPng(platform, target, button));
-            return h('div', { style: `max-width: ${mobile ? 375 : 520}px` },
-                h('div', { class: 'flex items-center justify-between mb-2' },
-                    h('h3', { class: 'text-sm font-semibold text-gray-600' }, platform.name),
+            const button = h('button', { type: 'button', class: 'link' }, 'Download PNG');
+            button.addEventListener('click', () => downloadPng(platform, target, button));
+            return h('section', { class: 'flex flex-col', style: `gap:10px; ${mobile ? 'max-width:393px' : ''}`, 'data-platform': platform.name },
+                h('div', { class: 'flex flex-wrap justify-between items-center gap-2' },
+                    h('h3', { class: 'section-label' }, platform.name),
                     button),
                 target,
-                usesLine(platform));
+                readsLine(platform));
         }
 
         // ---------- PNG export ----------
@@ -465,17 +594,30 @@
             return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
         }
 
-        async function exportPng(platform, node, button) {
+        function fileBase() {
+            return slug(hostOf(meta.url) || 'preview');
+        }
+
+        async function renderBlob(node) {
+            await inlineImages(node);
+            return htmlToImage.toBlob(node, { pixelRatio: 2, skipFonts: true, imagePlaceholder: PLACEHOLDER });
+        }
+
+        function saveBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = h('a', { href: url, download: filename });
+            document.body.append(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        async function withBusy(button, busyLabel, task) {
             const label = button.textContent;
-            button.textContent = 'Rendering…';
+            button.textContent = busyLabel;
             button.disabled = true;
             try {
-                await inlineImages(node);
-                const dataUrl = await htmlToImage.toPng(node, { pixelRatio: 2, skipFonts: true, imagePlaceholder: PLACEHOLDER });
-                const a = h('a', { href: dataUrl, download: `${slug(hostOf(meta.url) || 'preview')}-${slug(platform.name)}-${viewMode}.png` });
-                document.body.append(a);
-                a.click();
-                a.remove();
+                await task(text => { button.textContent = text; });
                 button.textContent = label;
             } catch (e) {
                 console.error(e);
@@ -486,6 +628,27 @@
             }
         }
 
+        function downloadPng(platform, node, button) {
+            return withBusy(button, 'Rendering…', async () => {
+                saveBlob(await renderBlob(node), `${fileBase()}-${slug(platform.name)}-${viewMode}.png`);
+            });
+        }
+
+        // All previews as PNGs in one zip.
+        function downloadAll(button) {
+            return withBusy(button, 'Rendering…', async progress => {
+                const zip = new JSZip();
+                const sections = [...$('previewList').querySelectorAll('[data-platform]')];
+                for (const [i, section] of sections.entries()) {
+                    progress(`Rendering ${i + 1}/${sections.length}…`);
+                    const node = section.children[1];
+                    zip.file(`${fileBase()}-${slug(section.dataset.platform)}-${viewMode}.png`, await renderBlob(node));
+                }
+                progress('Zipping…');
+                saveBlob(await zip.generateAsync({ type: 'blob' }), `${fileBase()}-previews-${viewMode}.zip`);
+            });
+        }
+
         // ---------- Sections ----------
 
         function renderFields() {
@@ -493,17 +656,17 @@
             box.replaceChildren();
             for (const f of FIELDS) {
                 const id = `field-${f.key}`;
-                const counter = h('span', { class: 'text-xs text-gray-400' });
-                const input = h(f.multiline ? 'textarea' : 'input', {
-                    id, rows: f.multiline ? 3 : null,
-                    class: 'mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm',
-                });
+                const counter = h('span');
+                const overNote = h('span', { style: 'font-size:12px; color: var(--error)' });
+                const input = h(f.multiline ? 'textarea' : 'input', { id, rows: f.multiline ? 4 : null, class: 'input' });
                 input.value = meta[f.key] || '';
                 const updateCounter = () => {
                     if (!f.max) return;
                     const n = input.value.length;
-                    counter.textContent = `${n}/${f.max}`;
-                    counter.className = `text-xs ${n > f.max ? 'text-red-600' : 'text-gray-400'}`;
+                    const over = n - f.max;
+                    counter.textContent = `${n} / ${f.max}`;
+                    counter.style.cssText = over > 0 ? 'font-weight:500; color: var(--error)' : '';
+                    overNote.textContent = over > 0 ? `${over} characters over — ${f.over}.` : '';
                 };
                 input.addEventListener('input', () => {
                     meta[f.key] = input.value;
@@ -511,19 +674,17 @@
                     renderLive();
                 });
                 updateCounter();
-                box.append(h('div', {},
-                    h('div', { class: 'flex justify-between items-baseline' },
-                        h('label', { for: id, class: 'text-sm font-medium text-gray-700' }, f.label), counter),
-                    input));
+                box.append(h('div', { class: 'flex flex-col', style: 'gap:6px' },
+                    h('label', { for: id, class: 'field-label' }, f.label, counter),
+                    input,
+                    overNote));
             }
         }
 
         function renderPreviews() {
-            $('previewList').replaceChildren(...PLATFORMS.map(previewCard));
+            $('previewList').replaceChildren(...PLATFORMS.map(previewSection));
             for (const btn of document.querySelectorAll('[data-view]')) {
-                const active = btn.dataset.view === viewMode;
-                btn.className = `px-3 py-1 text-sm rounded-md ${active ? 'bg-white shadow font-semibold' : 'text-gray-600'}`;
-                btn.setAttribute('aria-pressed', active);
+                btn.setAttribute('aria-pressed', btn.dataset.view === viewMode);
             }
         }
 
@@ -565,17 +726,25 @@
             probe.src = src;
         }
 
+        // Tags we expect, and what platforms use instead when they're missing.
+        const EXPECTED_TAGS = [
+            ['og:title', ['twitter:title', 'title']],
+            ['og:description', ['twitter:description', 'description']],
+            ['og:image', ['twitter:image', 'twitter:image:src']],
+            ['og:url', ['canonical']],
+            ['twitter:card', null],
+        ];
+
         function renderChecks() {
             const m = meta;
-            const tags = found?.tags || [];
-            const has = k => tags.some(([key]) => key === k);
             const items = [];
-            const ok = t => items.push(['ok', t]);
-            const warn = t => items.push(['warn', t]);
-            const bad = t => items.push(['bad', t]);
+            const ok = (...t) => items.push(['ok', t]);
+            const warn = (...t) => items.push(['warn', t]);
+            const bad = (...t) => items.push(['bad', t]);
+            const code = t => h('code', {}, t);
 
             if (!m.title) bad('Missing title.');
-            else if (m.title.length > 60) warn(`Title is ${m.title.length} characters; keep it under 60 so it isn't cut off.`);
+            else if (m.title.length > 60) warn(`Title is ${m.title.length} characters; keep it under 60.`);
             else ok(`Title length is good (${m.title.length}).`);
 
             if (!m.description) bad('Missing description.');
@@ -583,29 +752,40 @@
             else if (m.description.length < 50) warn(`Description is short (${m.description.length}); aim for 50–160 characters.`);
             else ok(`Description length is good (${m.description.length}).`);
 
-            if (!m.image) bad('Missing og:image. Most platforms will show no picture.');
-            else if (!imageSize) ok('og:image is set (checking size…).');
-            else if (imageSize.error) bad("og:image couldn't be loaded.");
-            else if (imageSize.w < 1200 || imageSize.h < 630) warn(`og:image is ${imageSize.w}×${imageSize.h}; 1200×630 or larger is recommended.`);
-            else ok(`og:image is ${imageSize.w}×${imageSize.h}.`);
+            if (!m.image) bad('No image; most platforms will show none.');
+            else if (!imageSize) ok(code('og:image'), ' is set (checking size…).');
+            else if (imageSize.error) bad(code('og:image'), " couldn't be loaded.");
+            else if (imageSize.w < 1200 || imageSize.h < 630) warn(code('og:image'), ` is ${imageSize.w}×${imageSize.h}; 1200×630 or larger is recommended.`);
+            else ok(code('og:image'), ` is ${imageSize.w}×${imageSize.h}.`);
 
-            for (const k of ['og:title', 'og:description', 'og:image', 'og:url', 'twitter:card']) {
-                if (!has(k)) warn(`The page has no ${k} tag${k === 'twitter:card' ? '' : ' (using a fallback)'}.`);
+            for (const [tag, fallbacks] of EXPECTED_TAGS) {
+                if (hasTag(tag)) continue;
+                const fallback = fallbacks?.find(hasTag) || (tag === 'og:url' ? 'page URL' : null);
+                if (!fallbacks) warn('Missing ', code(tag), '.');
+                else if (fallback) warn('Missing ', code(tag), ' — using ', fallback === 'page URL' ? 'the page URL' : code(fallback), '.');
+                else warn('Missing ', code(tag), ' — no fallback.');
             }
 
-            const icons = { ok: ['✓', 'text-green-600'], warn: ['!', 'text-yellow-600'], bad: ['✕', 'text-red-600'] };
-            $('checks').replaceChildren(...items.map(([level, text]) =>
-                h('li', { class: 'flex gap-2' },
-                    h('span', { class: `font-bold w-4 flex-shrink-0 ${icons[level][1]}` }, icons[level][0]),
-                    h('span', {}, text))));
+            const colors = { ok: 'var(--ok)', warn: 'var(--warn)', bad: 'var(--error)' };
+            $('checks').replaceChildren(...items.map(([level, parts]) =>
+                h('li', { class: 'flex', style: 'gap:10px; padding:10px 24px' },
+                    h('span', { class: 'dot', style: `background:${colors[level]}`, title: level }),
+                    h('span', {}, parts))));
+
+            const count = level => items.filter(([l]) => l === level).length;
+            const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+            const summary = [`${count('ok')} passed`];
+            if (count('warn')) summary.push(plural(count('warn'), 'warning'));
+            if (count('bad')) summary.push(plural(count('bad'), 'error'));
+            $('checksSummary').textContent = summary.join(' · ');
         }
 
         function renderTagTable() {
-            const rows = found.tags.map(([key, value]) => h('tr', { class: 'border-t border-gray-200 align-top' },
-                h('th', { class: 'text-left font-mono font-normal text-gray-500 pr-4 py-1 whitespace-nowrap' }, key),
-                h('td', { class: 'py-1 break-all' },
+            const rows = found.tags.map(([key, value]) => h('tr', { style: 'border-top:1px solid var(--subtle); vertical-align:top' },
+                h('th', { class: 'tag-key', style: 'text-align:left; font-weight:400; color: var(--muted-2); padding:6px 16px 6px 0; white-space:nowrap' }, key),
+                h('td', { style: 'padding:6px 0; word-break:break-all' },
                     /^https?:\/\//.test(value)
-                        ? h('a', { href: value, target: '_blank', rel: 'noopener noreferrer', class: 'text-blue-600 hover:underline' }, value)
+                        ? h('a', { href: value, target: '_blank', rel: 'noopener noreferrer', class: 'link', style: 'font-size:13px' }, value)
                         : value)));
             $('tagTable').replaceChildren(...rows);
             $('source').textContent = `Fetched via ${found.source}`;
@@ -622,6 +802,7 @@
             renderFields();
             renderTagTable();
             renderLive();
+            $('empty').classList.add('hidden');
             $('result').classList.remove('hidden');
         }
 
@@ -641,42 +822,47 @@
             } catch {
                 // e.g. file:// pages can't change their path
             }
-            document.title = `${hostOf(url)} · Open Graph Preview`;
+            document.title = `${hostOf(url)} · og/preview`;
         }
 
         // ---------- Main ----------
+
+        function setStatus(text, isError = false) {
+            $('status').textContent = text;
+            $('status').style.color = isError ? 'var(--error)' : '';
+        }
 
         async function lookup(input) {
             let url;
             try {
                 url = normalizeUrl(input);
             } catch {
-                $('status').textContent = 'Please enter a valid URL.';
+                setStatus('Please enter a valid URL.', true);
                 return;
             }
 
             $('url').value = url;
             setRoute(url);
-            $('status').textContent = 'Loading…';
-            $('result').classList.add('hidden');
+            setStatus('');
             $('submitBtn').disabled = true;
+            $('submitBtn').textContent = 'Checking…';
 
             try {
                 const data = await fetchViaProxies(url) || await fetchViaMicrolink(url);
                 if (!data.tags.length) {
-                    $('status').textContent = 'No Open Graph data found.';
+                    setStatus('No Open Graph data found.', true);
                     return;
                 }
-                $('status').textContent = '';
                 pageUrl = url;
                 found = data;
                 original = deriveMeta(data.tags, url);
                 meta = { ...original };
                 renderAll();
             } catch (e) {
-                $('status').textContent = `Couldn't fetch metadata for this URL (${e.message}). Try again later.`;
+                setStatus(`Couldn't fetch metadata for this URL (${e.message}). Try again later.`, true);
             } finally {
                 $('submitBtn').disabled = false;
+                $('submitBtn').textContent = 'Check →';
             }
         }
 
@@ -692,14 +878,7 @@
             });
         }
 
-        $('downloadAll').addEventListener('click', async () => {
-            const buttons = [...$('previewList').querySelectorAll('button')];
-            for (const b of buttons) {
-                b.click();
-                await new Promise(r => setTimeout(r, 400));
-                while (b.disabled) await new Promise(r => setTimeout(r, 100));
-            }
-        });
+        $('downloadAll').addEventListener('click', () => downloadAll($('downloadAll')));
 
         $('resetBtn').addEventListener('click', () => {
             meta = { ...original };
@@ -720,7 +899,7 @@
         $('copyJson').addEventListener('click', () => {
             if (!found) return;
             const data = { url: pageUrl, tags: Object.fromEntries(found.tags) };
-            copyText($('copyJson'), JSON.stringify(data, null, 2), 'Copy as JSON');
+            copyText($('copyJson'), JSON.stringify(data, null, 2), 'Copy JSON');
         });
 
         $('copyTags').addEventListener('click', () => copyText($('copyTags'), metaTagsCode(), 'Copy'));
