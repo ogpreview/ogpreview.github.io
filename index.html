@@ -51,19 +51,23 @@
 
     <script>
         // Bump on every change so you can confirm the live site is updated.
-        const VERSION = '2.0.0';
+        const VERSION = '2.1.0';
         const UPDATED = '2026-10-28';
         document.getElementById('version').textContent = `v${VERSION} · updated ${UPDATED}`;
 
         // A static page can't fetch other sites directly (CORS), so we go
         // through public CORS proxies and parse the HTML ourselves. If all of
         // them fail we fall back to Microlink's free metadata API.
-        const PROXIES = [
+        // Your own proxy (see worker/README.md), e.g.
+        // 'https://og-proxy.<you>.workers.dev/?url='. When set, the public
+        // proxies are only used if it fails.
+        const CUSTOM_PROXY = '';
+        const PUBLIC_PROXIES = [
             url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
             url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
             url => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`,
         ];
-        const TIMEOUT_MS = 10000;
+        const TIMEOUT_MS = 6000;
 
         const $ = id => document.getElementById(id);
         let lastData = null;
@@ -74,11 +78,14 @@
             return new URL(url).href; // throws on invalid input
         }
 
-        async function fetchWithTimeout(url) {
+        async function fetchWithTimeout(url, signal) {
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+            signal?.addEventListener('abort', () => controller.abort());
             try {
-                return await fetch(url, { signal: controller.signal });
+                const res = await fetch(url, { signal: controller.signal });
+                // Keep the timeout running while the body downloads.
+                return { ok: res.ok, status: res.status, text: await res.text() };
             } finally {
                 clearTimeout(timer);
             }
@@ -115,24 +122,35 @@
             return tags;
         }
 
-        async function fetchViaProxies(url) {
-            for (const proxy of PROXIES) {
-                try {
-                    const res = await fetchWithTimeout(proxy(url));
-                    if (!res.ok) continue;
-                    const html = await res.text();
-                    const tags = parseMeta(html, url);
-                    if (tags.length) return { tags, source: new URL(proxy(url)).host };
-                } catch (e) {
-                    // try the next proxy
-                }
+        // Ask all proxies at once and take the first one that returns tags.
+        async function raceProxies(url, proxies) {
+            const controller = new AbortController();
+            try {
+                return await Promise.any(proxies.map(async proxy => {
+                    const res = await fetchWithTimeout(proxy(url), controller.signal);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const tags = parseMeta(res.text, url);
+                    if (!tags.length) throw new Error('no tags');
+                    return { tags, source: new URL(proxy(url)).host };
+                }));
+            } catch {
+                return null;
+            } finally {
+                controller.abort(); // cancel the slower requests
             }
-            return null;
+        }
+
+        async function fetchViaProxies(url) {
+            if (CUSTOM_PROXY) {
+                const own = await raceProxies(url, [u => CUSTOM_PROXY + encodeURIComponent(u)]);
+                if (own) return own;
+            }
+            return raceProxies(url, PUBLIC_PROXIES);
         }
 
         async function fetchViaMicrolink(url) {
             const res = await fetchWithTimeout(`https://api.microlink.io/?url=${encodeURIComponent(url)}`);
-            const json = await res.json();
+            const json = JSON.parse(res.text);
             if (json.status !== 'success') throw new Error(json.message || 'Microlink request failed');
             const d = json.data;
             const tags = [];
