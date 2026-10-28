@@ -7,6 +7,7 @@ The current version is shown at the bottom of the page.
 
 Link to a preview directly with `https://ogpreview.github.io/url/<url-encoded link>` (same format as opengraph.xyz) or `?url=<link>`.
 
+- **4.2.0** (2026-10-28): Mobile view shows a full phone mockup with each app's top bar and gray placeholder content around the link preview; PNG exports include the whole phone.
 - **4.1.0** (2026-10-28): Footer with links to the Open Graph spec, platform sharing guides and official debuggers.
 - **4.0.0** (2026-10-28): Minimal monospace redesign (JetBrains Mono, stone palette, flat cards) from the design handoff; checks summary and fallback info; over-limit notes on fields; outline tag chips; Download all PNGs now saves one zip.
 - **3.1.0** (2026-10-28): Desktop / Mobile preview switch with phone frames and mobile layouts; per-platform list of the tags each one reads (found / missing); download any preview as PNG, or all at once. The Worker now also passes images through so they appear in PNGs (redeploy it).

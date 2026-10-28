@@ -235,7 +235,7 @@
 
     <script>
         // Bump on every change so you can confirm the live site is updated.
-        const VERSION = '4.1.0';
+        const VERSION = '4.2.0';
         const UPDATED = '2026-10-28';
         document.getElementById('version').textContent = `v${VERSION} · updated ${UPDATED}`;
 
@@ -544,15 +544,174 @@
             },
         ];
 
+        // ---------- Phone mockup ----------
+        // In Mobile view each preview is shown inside a phone, in the spot it
+        // would really appear (a post, a search result, a chat message), with
+        // gray placeholder blocks standing in for the rest of the app.
+
+        const SCREEN_HEIGHT = 760;
+
+        function skel(width, height, dark, extra = '') {
+            return h('div', { style: `width:${width}; height:${height}px; flex-shrink:0; border-radius:4px; background:${dark ? '#404249' : '#e7e5e4'}; ${extra}` });
+        }
+
+        function skelLines(widths, dark, height = 8) {
+            return h('div', { class: 'flex flex-col', style: 'gap:6px' }, widths.map(w => skel(w, height, dark)));
+        }
+
+        function skelAvatar(size, dark) {
+            return skel(`${size}px`, size, dark, 'border-radius:50%');
+        }
+
+        // Avatar plus name/time lines, the top of a post or message.
+        function skelByline(dark, size = 36) {
+            return h('div', { class: 'flex items-center gap-2' }, skelAvatar(size, dark), skelLines(['120px', '70px'], dark));
+        }
+
+        function skelTabBar(dark, count = 5) {
+            return h('div', { class: 'flex justify-around items-center', style: `height:52px; border-top:1px solid ${dark ? '#1e1f22' : '#e7e5e4'}` },
+                Array.from({ length: count }, () => skel('22px', 22, dark, 'border-radius:6px')));
+        }
+
+        function appBar(title, { color = '#0a0a0a', bg = '#fff', border = '#e7e5e4', size = 20, left, right } = {}) {
+            return h('div', { class: 'flex items-center gap-3 pv', style: `height:48px; padding:0 14px; background:${bg}; border-bottom:1px solid ${border}` },
+                left,
+                h('div', { class: 'flex-1 clamp-1', style: `font-size:${size}px; font-weight:700; color:${color}` }, title),
+                right);
+        }
+
+        // Each platform's screen: top bar, content around the preview, bottom bar.
+        const SCREENS = {
+            'Google': (m, card) => ({
+                bg: '#fff',
+                top: h('div', { class: 'pv', style: 'padding:6px 14px 10px' },
+                    h('div', { class: 'flex items-center', style: 'height:44px; padding:0 16px; border-radius:22px; box-shadow:0 1px 6px rgba(32,33,36,.2); font-size:15px; color:#202124' },
+                        h('span', { class: 'clamp-1' }, hostOf(m.url) || 'search')),
+                    h('div', { class: 'flex gap-4', style: 'margin-top:12px' }, ['44px', '52px', '40px', '48px', '36px'].map(w => skel(w, 10)))),
+                content: [card, ...[0, 1, 2].map(() => h('div', { style: 'padding:16px; border-radius:12px; box-shadow:0 0 0 1px #e7e5e4' },
+                    skelByline(false, 28), h('div', { style: 'height:12px' }), skel('85%', 14), h('div', { style: 'height:10px' }), skelLines(['100%', '92%', '60%'], false)))],
+            }),
+            'Facebook': (m, card) => ({
+                bg: '#f0f2f5',
+                top: appBar('facebook', { color: '#0866ff', size: 24, right: h('div', { class: 'flex gap-2' }, skelAvatar(30), skelAvatar(30)) }),
+                content: [
+                    h('div', { style: 'background:#fff; margin:0 -12px; padding:12px' },
+                        skelByline(), h('div', { style: 'height:10px' }), skelLines(['95%', '70%']), h('div', { style: 'height:10px; margin:0 -12px' }),
+                        h('div', { style: 'margin:0 -12px' }, card),
+                        h('div', { class: 'flex justify-around', style: 'margin-top:12px' }, ['60px', '70px', '56px'].map(w => skel(w, 10)))),
+                    h('div', { style: 'background:#fff; margin:0 -12px; padding:12px' },
+                        skelByline(), h('div', { style: 'height:10px' }), skelLines(['80%']), h('div', { style: 'height:10px' }), skel('100%', 220)),
+                ],
+                bottom: skelTabBar(),
+            }),
+            'X (Twitter)': (m, card) => {
+                const post = inner => h('div', { class: 'flex gap-3', style: 'margin:0 -12px; padding:12px; border-bottom:1px solid #eff3f4' },
+                    skelAvatar(40), h('div', { class: 'flex-1 min-w-0 flex flex-col', style: 'gap:8px' }, inner));
+                return {
+                    bg: '#fff',
+                    top: h('div', {},
+                        h('div', { class: 'flex items-center justify-between', style: 'height:48px; padding:0 14px' }, skelAvatar(30), skel('28px', 28, false, 'border-radius:6px'), h('div', { style: 'width:30px' })),
+                        h('div', { class: 'flex justify-around', style: 'height:40px; align-items:center; border-bottom:1px solid #eff3f4' }, skel('60px', 10), skel('70px', 10))),
+                    content: [
+                        post([skel('55%', 10), skelLines(['100%', '75%']), card, h('div', { class: 'flex justify-between', style: 'padding-right:24px' }, [0, 1, 2, 3].map(() => skel('28px', 10)))]),
+                        post([skel('45%', 10), skelLines(['100%', '90%', '40%']), skel('100%', 180, false, 'border-radius:12px')]),
+                    ],
+                    gap: 0,
+                    bottom: skelTabBar(),
+                };
+            },
+            'LinkedIn': (m, card) => ({
+                bg: '#f4f2ee',
+                top: h('div', { class: 'flex items-center gap-3', style: 'height:52px; padding:0 14px; background:#fff; border-bottom:1px solid #e7e5e4' },
+                    skelAvatar(30), skel('100%', 32, false, 'border-radius:4px; background:#edf3f8'), skel('26px', 26, false, 'border-radius:6px')),
+                content: [
+                    h('div', { style: 'background:#fff; margin:0 -12px; padding:12px' },
+                        skelByline(false, 44), h('div', { style: 'height:10px' }), skelLines(['95%', '85%', '50%']), h('div', { style: 'height:10px' }),
+                        h('div', { style: 'margin:0 -12px' }, card),
+                        h('div', { class: 'flex justify-around', style: 'margin-top:12px' }, [0, 1, 2, 3].map(() => skel('48px', 10)))),
+                    h('div', { style: 'background:#fff; margin:0 -12px; padding:12px' }, skelByline(false, 44), h('div', { style: 'height:10px' }), skelLines(['90%', '60%'])),
+                ],
+                bottom: skelTabBar(),
+            }),
+            'Discord': (m, card) => {
+                const msg = (lines, extra) => h('div', { class: 'flex gap-3' }, skelAvatar(36, true),
+                    h('div', { class: 'flex-1 min-w-0 flex flex-col', style: 'gap:8px' }, skel('90px', 10, true), skelLines(lines, true), extra));
+                return {
+                    bg: '#313338',
+                    top: appBar('# general', { color: '#f2f3f5', bg: '#313338', border: '#1e1f22', size: 16, left: skel('20px', 16, true) }),
+                    content: [
+                        msg(['85%', '50%']),
+                        msg(['70%']),
+                        msg(['60%'], h('div', { style: 'margin:-4px -16px 0 -16px' }, card)),
+                        msg(['80%', '30%']),
+                        msg(['65%']),
+                        msg(['90%', '45%']),
+                    ],
+                    bottom: h('div', { style: 'padding:8px 12px 10px' }, skel('100%', 40, true, 'border-radius:20px; background:#383a40')),
+                };
+            },
+            'Slack': (m, card) => {
+                // Inside a message the unfurl is just the bar block, without its own box.
+                card.style.boxShadow = 'none';
+                card.style.padding = '0';
+                const msg = (lines, extra) => h('div', { class: 'flex gap-3' }, skel('36px', 36, false, 'border-radius:6px'),
+                    h('div', { class: 'flex-1 min-w-0 flex flex-col', style: 'gap:8px' }, skel('100px', 10), skelLines(lines), extra));
+                return {
+                    bg: '#fff',
+                    top: appBar('# general', { size: 16, left: skel('20px', 16) }),
+                    content: [
+                        msg(['90%', '60%']),
+                        msg(['55%'], card),
+                        msg(['85%', '40%']),
+                        msg(['70%']),
+                        msg(['90%', '75%', '30%']),
+                        msg(['50%']),
+                    ],
+                    bottom: h('div', { style: 'padding:8px 12px 10px' }, skel('100%', 44, false, 'border-radius:8px; background:#fff; box-shadow: inset 0 0 0 1px #d1d5db')),
+                };
+            },
+            'WhatsApp': (m, card) => {
+                const incoming = w => h('div', { style: `align-self:flex-start; width:${w}; padding:8px 10px; border-radius:8px; background:#fff` }, skelLines(['100%', '60%']));
+                return {
+                    bg: '#efeae2',
+                    top: h('div', { class: 'flex items-center gap-3', style: 'height:56px; padding:0 14px; background:#f0f2f5; border-bottom:1px solid #e7e5e4' },
+                        skel('14px', 14), skelAvatar(36), skelLines(['110px', '60px'])),
+                    content: [
+                        incoming('62%'),
+                        incoming('45%'),
+                        h('div', { style: 'margin:0 -16px' }, card),
+                        incoming('55%'),
+                    ],
+                    bottom: h('div', { class: 'flex items-center gap-2', style: 'padding:8px 10px 10px; background:#efeae2' },
+                        skel('100%', 42, false, 'border-radius:21px; background:#fff'), skelAvatar(42, false)),
+                };
+            },
+        };
+
         function phoneFrame(platform, body) {
             const dark = platform.dark;
+            const screen = SCREENS[platform.name](meta, body);
             const fg = dark ? '#f2f3f5' : '#0a0a0a';
-            // Real borders (not box-shadow rings) so the PNG export includes the whole frame.
-            return h('div', { style: 'width:393px; max-width:100%; padding:8px; border-radius:36px; background:#fff; border:1px solid #e7e5e4' },
-                h('div', { style: `border-radius:28px; overflow:hidden; background:${dark ? '#313338' : '#fafaf9'}; border:1px solid #e7e5e4` },
-                    h('div', { class: 'flex justify-between', style: `padding:10px 20px 4px; font-size:11px; font-weight:500; color:${fg}` }, h('span', {}, '9:41'), h('span', {}, '5G ▮▮▮')),
-                    h('div', { class: 'section-label', style: `padding:6px 16px 10px; color:${dark ? '#b5bac1' : '#57534e'}; border-bottom:1px solid ${dark ? '#1e1f22' : '#e7e5e4'}` }, platform.name),
-                    h('div', { style: 'padding:12px' }, body)));
+            const button = (side, top, height) => h('div', { style: `position:absolute; ${side}:0; top:${top}px; width:3px; height:${height}px; border-radius:2px; background:#44403c` });
+
+            // Side buttons sit inside the wrapper's padding so PNG exports include them.
+            return h('div', { style: 'position:relative; width:405px; max-width:100%; padding:0 3px' },
+                button('left', 110, 28), button('left', 160, 52), button('left', 222, 52), button('right', 180, 80),
+                h('div', { style: 'padding:11px; border-radius:58px; background:#1c1917; box-shadow: inset 0 0 0 2px #44403c' },
+                    h('div', { class: 'flex flex-col', style: `position:relative; height:${SCREEN_HEIGHT}px; border-radius:47px; overflow:hidden; background:${screen.bg}` },
+                        // Status bar with the camera cutout in the middle.
+                        h('div', { class: 'flex items-center justify-between flex-shrink-0 pv', style: `height:50px; padding:0 30px; font-size:15px; font-weight:600; color:${fg}; background:${screen.top?.style?.background || screen.bg}` },
+                            h('span', {}, '9:41'),
+                            h('span', { style: 'width:110px; height:32px; border-radius:16px; background:#000' }),
+                            h('span', { class: 'flex items-center gap-1' },
+                                h('span', { style: `width:17px; height:11px; border-radius:2px; background:${fg}` }),
+                                h('span', { style: `width:25px; height:12px; border-radius:3px; border:1.5px solid ${fg}; padding:1px` }, h('span', { style: `display:block; width:80%; height:100%; border-radius:1px; background:${fg}` })))),
+                        screen.top && h('div', { class: 'flex-shrink-0' }, screen.top),
+                        h('div', { class: 'flex-1 flex flex-col overflow-hidden', style: `padding:12px; gap:${screen.gap ?? 12}px` }, screen.content),
+                        screen.bottom && h('div', { class: 'flex-shrink-0', style: `background:${screen.bg}` }, screen.bottom),
+                        // Home indicator.
+                        h('div', { class: 'flex justify-center flex-shrink-0', style: `padding:8px 0 10px; background:${screen.bg}` },
+                            h('span', { style: `width:134px; height:5px; border-radius:3px; background:${dark ? '#f2f3f5' : '#0a0a0a'}` })))));
         }
 
         // Tags this platform reads, outlined green if the page has them, amber if not.
@@ -574,7 +733,7 @@
             const target = mobile ? phoneFrame(platform, body) : body;
             const button = h('button', { type: 'button', class: 'link' }, 'Download PNG');
             button.addEventListener('click', () => downloadPng(platform, target, button));
-            return h('section', { class: 'flex flex-col', style: `gap:10px; ${mobile ? 'max-width:393px' : ''}`, 'data-platform': platform.name },
+            return h('section', { class: 'flex flex-col', style: `gap:10px; ${mobile ? 'max-width:405px' : ''}`, 'data-platform': platform.name },
                 h('div', { class: 'flex flex-wrap justify-between items-center gap-2' },
                     h('h3', { class: 'section-label' }, platform.name),
                     button),
