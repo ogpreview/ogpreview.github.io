@@ -6,6 +6,7 @@
     <title>Open Graph Data Preview</title>
     <meta name="description" content="Preview how any link looks on Google, Facebook, X, LinkedIn, Discord, Slack and WhatsApp. Check, edit and generate Open Graph meta tags.">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js" defer></script>
     <style>
         .clamp-1, .clamp-2, .clamp-3 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
         .clamp-1 { -webkit-line-clamp: 1; }
@@ -62,7 +63,16 @@
 
             <!-- Right: platform previews and generated code -->
             <div class="lg:col-span-3 space-y-6 min-w-0 order-first lg:order-none">
-                <section id="previews" class="space-y-6"></section>
+                <section id="previews">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                        <div class="inline-flex bg-gray-200 rounded-lg p-1" role="group" aria-label="Preview size">
+                            <button type="button" data-view="desktop">Desktop</button>
+                            <button type="button" data-view="mobile">Mobile</button>
+                        </div>
+                        <button id="downloadAll" type="button" class="text-sm text-blue-600 hover:underline">Download all PNGs</button>
+                    </div>
+                    <div id="previewList" class="space-y-8"></div>
+                </section>
 
                 <section class="bg-white rounded-md shadow p-4">
                     <div class="flex items-center justify-between mb-2">
@@ -82,7 +92,7 @@
 
     <script>
         // Bump on every change so you can confirm the live site is updated.
-        const VERSION = '3.0.0';
+        const VERSION = '3.1.0';
         const UPDATED = '2026-10-28';
         document.getElementById('version').textContent = `v${VERSION} · updated ${UPDATED}`;
 
@@ -276,74 +286,205 @@
             return el;
         }
 
-        function card(name, body) {
-            return h('div', { style: 'max-width: 520px' },
-                h('h3', { class: 'text-sm font-semibold text-gray-600 mb-2' }, name),
-                body);
+        // ---------- Platform previews (approximations of each site's link card) ----------
+        // Each platform: which tags it reads, and how its card looks on desktop
+        // and on a phone. `dark` platforms get a dark phone frame.
+
+        const PLATFORMS = [
+            {
+                name: 'Google', uses: ['title', 'description'],
+                render: (m, mobile) => h('div', { class: `bg-white shadow p-4 ${mobile ? 'rounded-xl' : 'rounded-md'}`, style: 'font-family: arial, sans-serif' },
+                    h('div', { class: 'flex items-center gap-2' },
+                        h('div', { class: 'w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0' }, favicon(m, 18)),
+                        h('div', { class: 'leading-tight min-w-0' },
+                            h('div', { class: 'text-sm clamp-1' }, m.siteName || hostOf(m.url)),
+                            h('div', { class: 'text-xs text-gray-600 clamp-1' }, m.url))),
+                    h('a', { href: safeHref(m.url), target: '_blank', rel: 'noopener noreferrer', class: `block mt-1 hover:underline ${mobile ? 'text-lg clamp-2' : 'text-xl clamp-1'}`, style: 'color:#1a0dab' }, m.title || 'No title'),
+                    mobile
+                        ? h('div', { class: 'flex gap-3 mt-1' },
+                            h('div', { class: 'text-sm clamp-3 flex-1 min-w-0', style: 'color:#4d5156' }, m.description),
+                            m.image && h('div', { class: 'w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden' }, img(m.image)))
+                        : h('div', { class: 'text-sm clamp-2', style: 'color:#4d5156' }, m.description)),
+            },
+            {
+                name: 'Facebook', uses: ['og:title', 'og:description', 'og:image', 'og:url'],
+                render: (m, mobile) => h('div', { class: 'bg-white overflow-hidden', style: 'font-family: Helvetica, Arial, sans-serif; border: 1px solid #dadde1' },
+                    h('div', { class: 'ratio-191' }, img(m.image)),
+                    h('div', { class: 'px-3 py-2', style: 'background:#f0f2f5; border-top: 1px solid #dadde1' },
+                        h('div', { class: 'text-xs uppercase clamp-1', style: 'color:#65676b' }, hostOf(m.url)),
+                        h('div', { class: 'font-semibold clamp-2', style: 'color:#050505' }, m.title),
+                        !mobile && h('div', { class: 'text-sm clamp-1', style: 'color:#65676b' }, m.description))),
+            },
+            {
+                name: 'X (Twitter)', uses: ['twitter:card', 'twitter:title', 'twitter:image', 'og:title', 'og:image'],
+                render: m => m.twitterCard === 'summary'
+                    ? h('div', { class: 'bg-white flex rounded-2xl overflow-hidden', style: 'border: 1px solid #cfd9de' },
+                        h('div', { class: 'w-28 flex-shrink-0 ratio-1', style: 'border-right: 1px solid #cfd9de' }, img(m.image)),
+                        h('div', { class: 'p-3 text-sm min-w-0 flex flex-col justify-center' },
+                            h('div', { class: 'clamp-1', style: 'color:#536471' }, hostOf(m.url)),
+                            h('div', { class: 'clamp-1', style: 'color:#0f1419' }, m.title),
+                            h('div', { class: 'clamp-2', style: 'color:#536471' }, m.description)))
+                    : h('div', { class: 'bg-white' },
+                        h('div', { class: 'relative rounded-2xl overflow-hidden ratio-191', style: 'border: 1px solid #cfd9de' },
+                            img(m.image),
+                            h('div', { class: 'absolute bottom-0 left-0 m-3 px-1 rounded text-xs text-white clamp-1', style: 'background: rgba(0,0,0,.77); max-width: 90%' }, m.title)),
+                        h('div', { class: 'text-xs mt-1', style: 'color:#536471' }, `From ${hostOf(m.url)}`)),
+            },
+            {
+                name: 'LinkedIn', uses: ['og:title', 'og:image', 'og:url'],
+                render: m => h('div', { class: 'bg-white shadow overflow-hidden rounded-md' },
+                    h('div', { class: 'ratio-191' }, img(m.image)),
+                    h('div', { class: 'px-3 py-2', style: 'background:#eef3f8' },
+                        h('div', { class: 'text-sm font-semibold clamp-2', style: 'color:rgba(0,0,0,.9)' }, m.title),
+                        h('div', { class: 'text-xs clamp-1', style: 'color:rgba(0,0,0,.6)' }, hostOf(m.url)))),
+            },
+            {
+                name: 'Discord', uses: ['og:site_name', 'og:title', 'og:description', 'og:image', 'theme-color'], dark: true,
+                render: m => h('div', { class: 'p-4 rounded-md', style: 'background:#313338' },
+                    h('div', { class: 'rounded p-3 max-w-md', style: `background:#2b2d31; border-left: 4px solid ${/^#[0-9a-f]{3,8}$/i.test(m.themeColor) ? m.themeColor : '#1e1f22'}` },
+                        m.siteName && h('div', { class: 'text-xs mb-1', style: 'color:#dbdee1' }, m.siteName),
+                        h('a', { href: safeHref(m.url), target: '_blank', rel: 'noopener noreferrer', class: 'font-semibold hover:underline clamp-2', style: 'color:#00a8fc' }, m.title),
+                        h('div', { class: 'text-sm mt-1 clamp-3', style: 'color:#dbdee1' }, m.description),
+                        m.image && h('div', { class: 'mt-3 rounded overflow-hidden ratio-191' }, img(m.image)))),
+            },
+            {
+                name: 'Slack', uses: ['og:site_name', 'og:title', 'og:description', 'og:image'],
+                render: m => h('div', { class: 'bg-white rounded-md shadow p-4' },
+                    h('div', { class: 'pl-3', style: 'border-left: 4px solid #dddddd' },
+                        h('div', { class: 'flex items-center gap-1 text-sm font-bold' }, favicon(m, 16), m.siteName || hostOf(m.url)),
+                        h('a', { href: safeHref(m.url), target: '_blank', rel: 'noopener noreferrer', class: 'font-bold hover:underline clamp-2', style: 'color:#1264a3' }, m.title),
+                        h('div', { class: 'text-sm clamp-3', style: 'color:#1d1c1d' }, m.description),
+                        m.image && h('div', { class: 'mt-2 rounded overflow-hidden ratio-191', style: 'max-width: 360px' }, img(m.image)))),
+            },
+            {
+                name: 'WhatsApp', uses: ['og:title', 'og:description', 'og:image'],
+                render: m => h('div', { class: 'p-4 rounded-md', style: 'background:#efeae2' },
+                    h('div', { class: 'rounded-lg p-1 max-w-sm ml-auto', style: 'background:#d9fdd3' },
+                        h('div', { class: 'rounded-md overflow-hidden', style: 'background:#d1f4cc' },
+                            m.image && h('div', { class: 'ratio-191' }, img(m.image)),
+                            h('div', { class: 'p-2' },
+                                h('div', { class: 'text-sm font-semibold clamp-2' }, m.title),
+                                h('div', { class: 'text-xs text-gray-600 clamp-2' }, m.description),
+                                h('div', { class: 'text-xs text-gray-500 mt-1' }, hostOf(m.url)))),
+                        h('div', { class: 'text-sm px-1 pt-1 break-all', style: 'color:#027eb5' }, m.url))),
+            },
+        ];
+
+        let viewMode = 'desktop'; // or 'mobile'
+
+        function phoneFrame(platform, body) {
+            const fg = platform.dark ? '#f2f3f5' : '#111827';
+            return h('div', { style: `width: 375px; max-width: 100%; border: 10px solid #111827; border-radius: 36px; overflow: hidden; background: ${platform.dark ? '#313338' : '#f9fafb'}` },
+                h('div', { class: 'flex justify-between px-5 pt-2 pb-1 text-xs font-semibold', style: `color:${fg}` }, h('span', {}, '9:41'), h('span', {}, '5G ▮▮▮')),
+                h('div', { class: 'px-4 py-2 text-sm font-semibold', style: `color:${fg}; border-bottom: 1px solid ${platform.dark ? '#1e1f22' : '#e5e7eb'}` }, platform.name),
+                h('div', { class: 'p-3' }, body));
         }
 
-        // ---------- Platform previews (approximations of each site's link card) ----------
+        // Tags this platform reads, green if the page has them, red if it doesn't.
+        function usesLine(platform) {
+            const tags = found?.tags || [];
+            return h('div', { class: 'flex flex-wrap items-center gap-1 mt-2 text-xs' },
+                h('span', { class: 'text-gray-500 mr-1' }, 'Reads:'),
+                platform.uses.map(k => {
+                    const present = tags.some(([key]) => key === k);
+                    return h('span', {
+                        class: `font-mono px-1 rounded ${present ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`,
+                        title: present ? 'Found on the page' : 'Missing on the page; a fallback is used',
+                    }, k);
+                }));
+        }
 
-        const PREVIEWS = [
-            ['Google', m => h('div', { class: 'bg-white rounded-md shadow p-4', style: 'font-family: arial, sans-serif' },
-                h('div', { class: 'flex items-center gap-2' },
-                    h('div', { class: 'w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center' }, favicon(m, 18)),
-                    h('div', { class: 'leading-tight' },
-                        h('div', { class: 'text-sm' }, m.siteName || hostOf(m.url)),
-                        h('div', { class: 'text-xs text-gray-600 clamp-1' }, m.url))),
-                h('a', { href: safeHref(m.url), target: '_blank', rel: 'noopener noreferrer', class: 'block mt-1 text-xl clamp-1 hover:underline', style: 'color:#1a0dab' }, m.title || 'No title'),
-                h('div', { class: 'text-sm clamp-2', style: 'color:#4d5156' }, m.description))],
+        function previewCard(platform) {
+            const mobile = viewMode === 'mobile';
+            const body = platform.render(meta, mobile);
+            const target = mobile ? phoneFrame(platform, body) : body;
+            const button = h('button', { type: 'button', class: 'text-xs text-blue-600 hover:underline' }, 'Download PNG');
+            button.addEventListener('click', () => exportPng(platform, target, button));
+            return h('div', { style: `max-width: ${mobile ? 375 : 520}px` },
+                h('div', { class: 'flex items-center justify-between mb-2' },
+                    h('h3', { class: 'text-sm font-semibold text-gray-600' }, platform.name),
+                    button),
+                target,
+                usesLine(platform));
+        }
 
-            ['Facebook', m => h('div', { class: 'bg-white shadow overflow-hidden', style: 'font-family: Helvetica, Arial, sans-serif; border: 1px solid #dadde1' },
-                h('div', { class: 'ratio-191' }, img(m.image)),
-                h('div', { class: 'px-3 py-2', style: 'background:#f0f2f5; border-top: 1px solid #dadde1' },
-                    h('div', { class: 'text-xs uppercase clamp-1', style: 'color:#65676b' }, hostOf(m.url)),
-                    h('div', { class: 'font-semibold clamp-2', style: 'color:#050505' }, m.title),
-                    h('div', { class: 'text-sm clamp-1', style: 'color:#65676b' }, m.description)))],
+        // ---------- PNG export ----------
+        // The preview is drawn to a canvas with html-to-image. Images from other
+        // sites only work on a canvas if they allow CORS, so we fetch them
+        // ourselves (directly, then via our Worker, then a public proxy) and
+        // swap in data: URLs before drawing.
 
-            ['X (Twitter)', m => m.twitterCard === 'summary'
-                ? h('div', { class: 'bg-white flex rounded-2xl overflow-hidden', style: 'border: 1px solid #cfd9de' },
-                    h('div', { class: 'w-32 flex-shrink-0 ratio-1', style: 'border-right: 1px solid #cfd9de' }, img(m.image)),
-                    h('div', { class: 'p-3 text-sm min-w-0 flex flex-col justify-center' },
-                        h('div', { class: 'clamp-1', style: 'color:#536471' }, hostOf(m.url)),
-                        h('div', { class: 'clamp-1', style: 'color:#0f1419' }, m.title),
-                        h('div', { class: 'clamp-2', style: 'color:#536471' }, m.description)))
-                : h('div', {},
-                    h('div', { class: 'relative rounded-2xl overflow-hidden ratio-191', style: 'border: 1px solid #cfd9de' },
-                        img(m.image),
-                        h('div', { class: 'absolute bottom-0 left-0 m-3 px-1 rounded text-xs text-white clamp-1', style: 'background: rgba(0,0,0,.77); max-width: 90%' }, m.title)),
-                    h('div', { class: 'text-xs mt-1', style: 'color:#536471' }, `From ${hostOf(m.url)}`))],
+        const PLACEHOLDER = 'data:image/gif;base64,R0lGODlhAQABAIAAAOXn6wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==';
+        const imageCache = new Map();
 
-            ['LinkedIn', m => h('div', { class: 'bg-white shadow overflow-hidden rounded-md' },
-                h('div', { class: 'ratio-191' }, img(m.image)),
-                h('div', { class: 'px-3 py-2', style: 'background:#eef3f8' },
-                    h('div', { class: 'text-sm font-semibold clamp-2', style: 'color:rgba(0,0,0,.9)' }, m.title),
-                    h('div', { class: 'text-xs clamp-1', style: 'color:rgba(0,0,0,.6)' }, hostOf(m.url))))],
+        function blobToDataUrl(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
 
-            ['Discord', m => h('div', { class: 'p-4 rounded-md', style: 'background:#313338' },
-                h('div', { class: 'rounded p-3 max-w-md', style: `background:#2b2d31; border-left: 4px solid ${/^#[0-9a-f]{3,8}$/i.test(m.themeColor) ? m.themeColor : '#1e1f22'}` },
-                    m.siteName && h('div', { class: 'text-xs mb-1', style: 'color:#dbdee1' }, m.siteName),
-                    h('a', { href: safeHref(m.url), target: '_blank', rel: 'noopener noreferrer', class: 'font-semibold hover:underline clamp-2', style: 'color:#00a8fc' }, m.title),
-                    h('div', { class: 'text-sm mt-1 clamp-3', style: 'color:#dbdee1' }, m.description),
-                    m.image && h('div', { class: 'mt-3 rounded overflow-hidden ratio-191' }, img(m.image))))],
+        async function imageToDataUrl(src) {
+            if (!src || src.startsWith('data:')) return src;
+            if (imageCache.has(src)) return imageCache.get(src);
+            const attempts = [
+                src,
+                CUSTOM_PROXY && CUSTOM_PROXY + encodeURIComponent(src),
+                `https://corsproxy.io/?url=${encodeURIComponent(src)}`,
+            ].filter(Boolean);
+            let result = null;
+            for (const url of attempts) {
+                try {
+                    const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+                    if (!res.ok) continue;
+                    const blob = await res.blob();
+                    if (!blob.type.startsWith('image/')) continue;
+                    result = await blobToDataUrl(blob);
+                    break;
+                } catch {
+                    // try the next way
+                }
+            }
+            imageCache.set(src, result);
+            return result;
+        }
 
-            ['Slack', m => h('div', { class: 'bg-white rounded-md shadow p-4' },
-                h('div', { class: 'pl-3', style: 'border-left: 4px solid #dddddd' },
-                    h('div', { class: 'flex items-center gap-1 text-sm font-bold' }, favicon(m, 16), m.siteName || hostOf(m.url)),
-                    h('a', { href: safeHref(m.url), target: '_blank', rel: 'noopener noreferrer', class: 'font-bold hover:underline clamp-2', style: 'color:#1264a3' }, m.title),
-                    h('div', { class: 'text-sm clamp-3', style: 'color:#1d1c1d' }, m.description),
-                    m.image && h('div', { class: 'mt-2 rounded overflow-hidden ratio-191', style: 'max-width: 360px' }, img(m.image))))],
+        async function inlineImages(node) {
+            await Promise.all([...node.querySelectorAll('img')].map(async el => {
+                const data = await imageToDataUrl(el.getAttribute('src'));
+                if (!data || data === el.getAttribute('src')) return;
+                el.loading = 'eager';
+                el.src = data;
+                await el.decode().catch(() => {});
+            }));
+        }
 
-            ['WhatsApp', m => h('div', { class: 'p-4 rounded-md', style: 'background:#efeae2' },
-                h('div', { class: 'rounded-lg p-1 max-w-sm ml-auto', style: 'background:#d9fdd3' },
-                    h('div', { class: 'rounded-md overflow-hidden', style: 'background:#d1f4cc' },
-                        m.image && h('div', { class: 'ratio-191' }, img(m.image)),
-                        h('div', { class: 'p-2' },
-                            h('div', { class: 'text-sm font-semibold clamp-2' }, m.title),
-                            h('div', { class: 'text-xs text-gray-600 clamp-2' }, m.description),
-                            h('div', { class: 'text-xs text-gray-500 mt-1' }, hostOf(m.url)))),
-                    h('div', { class: 'text-sm px-1 pt-1 break-all', style: 'color:#027eb5' }, m.url)))],
-        ];
+        function slug(s) {
+            return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        }
+
+        async function exportPng(platform, node, button) {
+            const label = button.textContent;
+            button.textContent = 'Rendering…';
+            button.disabled = true;
+            try {
+                await inlineImages(node);
+                const dataUrl = await htmlToImage.toPng(node, { pixelRatio: 2, skipFonts: true, imagePlaceholder: PLACEHOLDER });
+                const a = h('a', { href: dataUrl, download: `${slug(hostOf(meta.url) || 'preview')}-${slug(platform.name)}-${viewMode}.png` });
+                document.body.append(a);
+                a.click();
+                a.remove();
+                button.textContent = label;
+            } catch (e) {
+                console.error(e);
+                button.textContent = 'Export failed';
+                setTimeout(() => { button.textContent = label; }, 2000);
+            } finally {
+                button.disabled = false;
+            }
+        }
 
         // ---------- Sections ----------
 
@@ -378,7 +519,12 @@
         }
 
         function renderPreviews() {
-            $('previews').replaceChildren(...PREVIEWS.map(([name, fn]) => card(name, fn(meta))));
+            $('previewList').replaceChildren(...PLATFORMS.map(previewCard));
+            for (const btn of document.querySelectorAll('[data-view]')) {
+                const active = btn.dataset.view === viewMode;
+                btn.className = `px-3 py-1 text-sm rounded-md ${active ? 'bg-white shadow font-semibold' : 'text-gray-600'}`;
+                btn.setAttribute('aria-pressed', active);
+            }
         }
 
         function escapeAttr(s) {
@@ -537,6 +683,22 @@
         $('urlForm').addEventListener('submit', event => {
             event.preventDefault();
             lookup($('url').value);
+        });
+
+        for (const btn of document.querySelectorAll('[data-view]')) {
+            btn.addEventListener('click', () => {
+                viewMode = btn.dataset.view;
+                renderPreviews();
+            });
+        }
+
+        $('downloadAll').addEventListener('click', async () => {
+            const buttons = [...$('previewList').querySelectorAll('button')];
+            for (const b of buttons) {
+                b.click();
+                await new Promise(r => setTimeout(r, 400));
+                while (b.disabled) await new Promise(r => setTimeout(r, 100));
+            }
         });
 
         $('resetBtn').addEventListener('click', () => {
