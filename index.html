@@ -240,7 +240,7 @@
         document.getElementById('version').textContent = `v${VERSION} · updated ${UPDATED}`;
 
         // A static page can't fetch other sites directly (CORS), so we go
-        // through our own Worker proxy (see worker/README.md), then public
+        // through our own Worker proxy (private repo ogpreview/worker), then public
         // CORS proxies, and parse the HTML ourselves. If all of them fail we
         // fall back to Microlink's free metadata API.
         const CUSTOM_PROXY = 'https://ogpreview.iniret.workers.dev/?url=';
