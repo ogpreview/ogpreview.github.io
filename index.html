@@ -35,6 +35,10 @@
             line-height: 20px;
             letter-spacing: -.01em;
             -webkit-font-smoothing: antialiased;
+            /* Keep the footer at the bottom on short pages. */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         ::selection { background: var(--ink); color: #fff; }
 
@@ -90,6 +94,12 @@
             background: var(--bg); border-radius: 2px; box-shadow: inset 0 0 0 1px var(--border);
         }
 
+        footer { margin-top: auto; }
+        footer .section-label { margin-bottom: 12px; }
+        .footer-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 12px; }
+        .footer-links a { color: var(--ink); text-decoration: underline; text-decoration-color: #d4d4d4; text-underline-offset: 4px; }
+        .footer-links a:hover { text-decoration-color: var(--ink); }
+
         .col-side { flex: 1 1 320px; min-width: 0; max-width: 100%; }
         .col-main { flex: 2 1 480px; min-width: 0; max-width: 100%; }
 
@@ -125,12 +135,12 @@
         </div>
     </header>
 
-    <div class="max-w-6xl mx-auto px-6">
+    <div class="w-full max-w-6xl mx-auto px-6">
         <p id="status" class="hint pt-6" aria-live="polite"></p>
-        <p id="empty" class="hint pt-4">Paste a link to see how it looks when shared on Google, Facebook, X, LinkedIn, Discord, Slack and WhatsApp.</p>
+        <p id="empty" class="hint pt-4 pb-16">Paste a link to see how it looks when shared on Google, Facebook, X, LinkedIn, Discord, Slack and WhatsApp.</p>
     </div>
 
-    <main id="result" class="hidden max-w-6xl mx-auto px-6 pt-4 pb-20 flex flex-wrap items-start gap-10">
+    <main id="result" class="hidden w-full max-w-6xl mx-auto px-6 pt-4 pb-20 flex flex-wrap items-start gap-10">
         <aside class="col-side flex flex-col gap-6">
             <section class="card">
                 <div class="card-head">
@@ -184,13 +194,48 @@
         </div>
     </main>
 
-    <footer class="max-w-6xl mx-auto px-6 pb-8 hint text-center">
-        <span id="version"></span>
+    <footer style="background:#fff; border-top: 1px solid var(--border)">
+        <div class="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <nav aria-labelledby="f-specs">
+                <h2 id="f-specs" class="section-label">Specs</h2>
+                <ul class="footer-links">
+                    <li><a href="https://ogp.me/" target="_blank" rel="noopener">The Open Graph protocol</a></li>
+                    <li><a href="https://developer.x.com/en/docs/x-for-websites/cards/overview/abouts-cards" target="_blank" rel="noopener">X (Twitter) Cards</a></li>
+                    <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta" target="_blank" rel="noopener">MDN: the &lt;meta&gt; element</a></li>
+                </ul>
+            </nav>
+            <nav aria-labelledby="f-platforms">
+                <h2 id="f-platforms" class="section-label">Platform guides</h2>
+                <ul class="footer-links">
+                    <li><a href="https://developers.facebook.com/docs/sharing/webmasters/" target="_blank" rel="noopener">Facebook: sharing for webmasters</a></li>
+                    <li><a href="https://www.linkedin.com/help/linkedin/answer/a521928" target="_blank" rel="noopener">LinkedIn: making your site shareable</a></li>
+                    <li><a href="https://developers.google.com/search/docs/appearance/snippet" target="_blank" rel="noopener">Google: search result snippets</a></li>
+                    <li><a href="https://api.slack.com/reference/messaging/link-unfurling" target="_blank" rel="noopener">Slack: link unfurling</a></li>
+                </ul>
+            </nav>
+            <nav aria-labelledby="f-tools">
+                <h2 id="f-tools" class="section-label">Official debuggers</h2>
+                <ul class="footer-links">
+                    <li><a href="https://developers.facebook.com/tools/debug/" target="_blank" rel="noopener">Facebook Sharing Debugger</a></li>
+                    <li><a href="https://www.linkedin.com/post-inspector/" target="_blank" rel="noopener">LinkedIn Post Inspector</a></li>
+                    <li><a href="https://search.google.com/test/rich-results" target="_blank" rel="noopener">Google Rich Results Test</a></li>
+                </ul>
+                <p class="hint mt-3">Platforms cache previews. Use these to refresh them after changing your tags.</p>
+            </nav>
+            <nav aria-labelledby="f-about">
+                <h2 id="f-about" class="section-label">og/preview</h2>
+                <ul class="footer-links">
+                    <li><a href="https://github.com/ogpreview/ogpreview.github.io" target="_blank" rel="noopener">Source on GitHub</a></li>
+                    <li><a href="https://github.com/ogpreview/ogpreview.github.io#changelog" target="_blank" rel="noopener">Changelog</a></li>
+                </ul>
+                <p class="hint mt-3"><span id="version"></span></p>
+            </nav>
+        </div>
     </footer>
 
     <script>
         // Bump on every change so you can confirm the live site is updated.
-        const VERSION = '4.0.0';
+        const VERSION = '4.1.0';
         const UPDATED = '2026-10-28';
         document.getElementById('version').textContent = `v${VERSION} · updated ${UPDATED}`;
 
