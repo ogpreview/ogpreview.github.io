@@ -45,8 +45,16 @@
             </section>
         </div>
     </div>
+    <footer class="max-w-2xl mx-auto mt-4 text-center text-xs text-gray-500">
+        <span id="version"></span>
+    </footer>
 
     <script>
+        // Bump on every change so you can confirm the live site is updated.
+        const VERSION = '2.0.0';
+        const UPDATED = '2026-10-28';
+        document.getElementById('version').textContent = `v${VERSION} · updated ${UPDATED}`;
+
         // A static page can't fetch other sites directly (CORS), so we go
         // through public CORS proxies and parse the HTML ourselves. If all of
         // them fail we fall back to Microlink's free metadata API.
