@@ -51,7 +51,7 @@
 
     <script>
         // Bump on every change so you can confirm the live site is updated.
-        const VERSION = '2.1.0';
+        const VERSION = '2.2.0';
         const UPDATED = '2026-10-28';
         document.getElementById('version').textContent = `v${VERSION} · updated ${UPDATED}`;
 
@@ -61,7 +61,7 @@
         // Your own proxy (see worker/README.md), e.g.
         // 'https://og-proxy.<you>.workers.dev/?url='. When set, the public
         // proxies are only used if it fails.
-        const CUSTOM_PROXY = '';
+        const CUSTOM_PROXY = 'https://ogpreview.iniret.workers.dev/?url=';
         const PUBLIC_PROXIES = [
             url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
             url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
