@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Graph Preview</title>
+    <script>
+        // GitHub Pages has no server-side routing, so links like
+        // /url/https%3A%2F%2Fexample.com%2F land here. Hand them to the app.
+        (function () {
+            var m = location.pathname.match(/^\/url\/(.+)$/);
+            if (!m) return;
+            // Unencoded links (/url/https://x.com/a?b=c) put part of the
+            // target in the query string, so keep it.
+            var raw = m[1] + location.search;
+            var target;
+            try { target = decodeURIComponent(raw); } catch (e) { target = raw; }
+            location.replace('/?url=' + encodeURIComponent(target) + location.hash);
+        })();
+    </script>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #f3f4f6; color: #111827; text-align: center; padding: 4rem 1rem; }
+        a { color: #2563eb; }
+    </style>
+</head>
+<body>
+    <h1>Page not found</h1>
+    <p><a href="/">Go to Open Graph Preview</a></p>
+</body>
+</html>
