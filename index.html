@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>og/preview</title>
-    <meta name="description" content="Preview how any link looks on Google, Facebook, X, LinkedIn, Discord, Slack and WhatsApp. Check, edit and generate Open Graph meta tags.">
+    <meta name="description" content="Preview how any link looks on Google, Facebook, X, LinkedIn, Discord, Slack, WhatsApp and iMessage. Check, edit and generate Open Graph meta tags.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
@@ -208,9 +208,9 @@
     <div id="landing" class="w-full">
         <section class="hero">
             <div class="relative max-w-6xl mx-auto px-6 pt-16 sm:pt-24 pb-12 text-center">
-                <span class="eyebrow"><span class="live"></span>Free · no sign-up · 7 platforms</span>
+                <span class="eyebrow"><span class="live"></span>Free · no sign-up · 8 platforms</span>
                 <h1 class="display">See your link<br><em>before</em> everyone else does.</h1>
-                <p class="lede">Paste any URL to preview how it looks when shared on Google, Facebook, X, LinkedIn, Discord, Slack and WhatsApp. Check the tags, fix them, and export the previews.</p>
+                <p class="lede">Paste any URL to preview how it looks when shared on Google, Facebook, X, LinkedIn, Discord, Slack, WhatsApp and iMessage. Check the tags, fix them, and export the previews.</p>
                 <form id="heroForm" class="hero-form mt-8 mx-auto" style="max-width: 640px">
                     <label for="heroUrl" class="sr-only">URL</label>
                     <input type="text" id="heroUrl" placeholder="Paste a link, e.g. github.com" autocomplete="url" class="input flex-1 min-w-0" required>
@@ -240,7 +240,7 @@
         <section style="background:#fff; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border)">
             <div class="max-w-6xl mx-auto px-6 py-6 flex flex-wrap justify-center items-center gap-x-8 gap-y-2">
                 <span class="kicker">Previews for</span>
-                <span>Google</span><span>Facebook</span><span>X</span><span>LinkedIn</span><span>Discord</span><span>Slack</span><span>WhatsApp</span>
+                <span>Google</span><span>Facebook</span><span>X</span><span>LinkedIn</span><span>Discord</span><span>Slack</span><span>WhatsApp</span><span>iMessage</span>
             </div>
         </section>
 
@@ -250,7 +250,7 @@
                 <h2 class="h2">Everything between your &lt;head&gt; and their feed.</h2>
             </div>
             <div class="grid-lines mt-12 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                <div class="feature"><span class="num">01</span><h3>Seven platforms, one paste</h3><p>Google, Facebook, X, LinkedIn, Discord, Slack and WhatsApp, each drawn the way that platform draws link cards.</p></div>
+                <div class="feature"><span class="num">01</span><h3>Eight platforms, one paste</h3><p>Google, Facebook, X, LinkedIn, Discord, Slack, WhatsApp and iMessage, each drawn the way that platform draws link cards.</p></div>
                 <div class="feature"><span class="num">02</span><h3>Desktop and phone</h3><p>Switch to Mobile to see each card inside a phone, in the feed, chat or search results where people will actually meet it.</p></div>
                 <div class="feature"><span class="num">03</span><h3>Checks that explain</h3><p>Title and description length, image size, and missing tags, with the fallback each platform will use instead.</p></div>
                 <div class="feature"><span class="num">04</span><h3>Edit live</h3><p>Change the title, description or image and every preview updates as you type. Reset brings back what the page has.</p></div>
@@ -397,8 +397,8 @@
 
     <script>
         // Bump on every change so you can confirm the live site is updated.
-        const VERSION = '5.0.0';
-        const UPDATED = '2026-10-28';
+        const VERSION = '5.1.0';
+        const UPDATED = '2026-11-05';
         document.getElementById('version').textContent = `v${VERSION} · updated ${UPDATED}`;
 
         // A static page can't fetch other sites directly (CORS), so we go
@@ -463,6 +463,8 @@
             if (canonical) tags.push(['canonical', absolutize(canonical.getAttribute('href'), base)]);
             const icon = doc.querySelector('link[rel~="icon"][href]');
             if (icon) tags.push(['icon', absolutize(icon.getAttribute('href'), base)]);
+            const touchIcon = doc.querySelector('link[rel="apple-touch-icon"][href]');
+            if (touchIcon) tags.push(['apple-touch-icon', absolutize(touchIcon.getAttribute('href'), base)]);
 
             return tags;
         }
@@ -522,6 +524,7 @@
             { key: 'title', label: 'Title', max: 60, over: 'titles get cut off' },
             { key: 'description', label: 'Description', max: 160, over: 'search results will truncate', multiline: true },
             { key: 'image', label: 'Image URL' },
+            { key: 'video', label: 'Video URL' },
             { key: 'url', label: 'Page URL' },
             { key: 'siteName', label: 'Site name' },
         ];
@@ -543,6 +546,10 @@
                 title: first(tags, 'og:title', 'twitter:title', 'title'),
                 description: first(tags, 'og:description', 'twitter:description', 'description'),
                 image: first(tags, 'og:image', 'og:image:url', 'og:image:secure_url', 'twitter:image', 'twitter:image:src'),
+                video: first(tags, 'og:video', 'og:video:url', 'og:video:secure_url'),
+                videoType: first(tags, 'og:video:type'),
+                videoWidth: first(tags, 'og:video:width'),
+                videoHeight: first(tags, 'og:video:height'),
                 url: first(tags, 'og:url', 'canonical') || url,
                 siteName: first(tags, 'og:site_name'),
                 type: first(tags, 'og:type') || 'website',
@@ -550,6 +557,7 @@
                 twitterSite: first(tags, 'twitter:site'),
                 themeColor: first(tags, 'theme-color'),
                 icon: first(tags, 'icon'),
+                touchIcon: first(tags, 'apple-touch-icon'),
             };
         }
 
@@ -615,6 +623,24 @@
             icon.onerror = () => icon.replaceWith(letter);
             icon.src = src;
             box.append(icon);
+            return box;
+        }
+
+        // og:video as iMessage shows it: the first frame (or og:image as the
+        // poster) with a play button; click to play inline.
+        function videoPlayer(m) {
+            const ratio = m.videoWidth > 0 && m.videoHeight > 0 ? `${m.videoWidth} / ${m.videoHeight}` : '16 / 9';
+            const video = h('video', { class: 'preview-img', preload: 'metadata', playsinline: '', poster: m.image || null });
+            const play = h('div', { class: 'absolute inset-0 flex items-center justify-center', style: 'pointer-events:none' },
+                h('div', { class: 'flex items-center justify-center', style: 'width:48px; height:48px; border-radius:50%; background:rgba(0,0,0,.45)' },
+                    h('div', { style: 'width:0; height:0; margin-left:4px; border-left:15px solid #fff; border-top:9px solid transparent; border-bottom:9px solid transparent' })));
+            const box = h('div', { class: 'relative overflow-hidden', style: `aspect-ratio:${ratio}; background:#000; cursor:pointer` }, video, play);
+            video.addEventListener('error', () => box.replaceChildren(placeholder("og:video didn't load")));
+            video.addEventListener('play', () => { play.style.display = 'none'; });
+            video.addEventListener('pause', () => { play.style.display = ''; });
+            box.addEventListener('click', () => (video.paused ? video.play() : video.pause()));
+            // #t= makes browsers show a real first frame when there's no poster.
+            video.src = m.image ? m.video : `${m.video}#t=0.1`;
             return box;
         }
 
@@ -703,6 +729,22 @@
                                 h('div', { class: 'clamp-2', style: 'font-size:12px; color:#4b5563' }, m.description),
                                 h('div', { style: 'font-size:12px; margin-top:4px; color:#6b7280' }, hostOf(m.url)))),
                         h('div', { style: 'font-size:14px; padding:4px 4px 0; word-break:break-all; color:#027eb5' }, m.url))),
+            },
+            {
+                name: 'iMessage', uses: ['og:title', 'og:image', 'og:video', 'apple-touch-icon'],
+                render: m => {
+                    const media = m.video ? videoPlayer(m) : m.image && h('div', { class: 'ratio-191' }, img(m.image));
+                    return h('div', { class: 'pv', style: `background:#fff; border-radius:2px; ${RING}; padding:16px` },
+                        h('div', { class: 'overflow-hidden', style: 'width:272px; max-width:100%; margin-left:auto; border-radius:18px; background:#e9e9eb' },
+                            media,
+                            h('div', { class: 'flex items-center', style: 'gap:10px; padding:9px 12px 10px' },
+                                h('div', { class: 'flex-1 min-w-0' },
+                                    h('div', { class: 'clamp-2', style: 'font-size:14px; font-weight:600; line-height:18px; color:#000' }, m.title || hostOf(m.url)),
+                                    h('div', { class: 'clamp-1', style: 'font-size:13px; color:#8e8e93' }, hostOf(m.url))),
+                                // Without an image or video iMessage shows a compact card with the site icon.
+                                !media && favicon({ ...m, icon: m.touchIcon || m.icon }, 40))),
+                        h('div', { style: 'margin-top:4px; text-align:right; font-size:11px; color:#8e8e93' }, 'Delivered'));
+                },
             },
         ];
 
@@ -848,6 +890,23 @@
                         skel('100%', 42, false, 'border-radius:21px; background:#fff'), skelAvatar(42, false)),
                 };
             },
+            'iMessage': (m, card) => {
+                const bubble = (w, sent) => h('div', { style: `align-self:${sent ? 'flex-end' : 'flex-start'}; width:${w}; padding:9px 12px; border-radius:18px; background:${sent ? '#0b84fe' : '#e9e9eb'}` },
+                    skelLines(['100%', '55%'], false));
+                return {
+                    bg: '#fff',
+                    top: h('div', { class: 'flex flex-col items-center', style: 'padding:4px 0 10px; background:#f6f6f6; border-bottom:1px solid #e7e5e4' },
+                        skelAvatar(44), h('div', { style: 'height:6px' }), skel('70px', 9)),
+                    content: [
+                        bubble('58%', false),
+                        bubble('46%', true),
+                        bubble('64%', false),
+                        h('div', { style: 'margin:0 -16px' }, card),
+                    ],
+                    bottom: h('div', { class: 'flex items-center gap-2', style: 'padding:8px 12px 10px' },
+                        skelAvatar(32, false), skel('calc(100% - 40px)', 34, false, 'border-radius:17px; background:#fff; box-shadow: inset 0 0 0 1px #d1d5db')),
+                };
+            },
         };
 
         function phoneFrame(platform, body, m = meta) {
@@ -964,9 +1023,35 @@
             return slug(hostOf(meta.url) || 'preview');
         }
 
+        // html-to-image can't draw a video from another site (it taints the
+        // canvas), so while rendering each video is swapped for its current
+        // frame if we're allowed to read it, else its poster or a placeholder.
+        function freezeVideos(node) {
+            const swaps = [...node.querySelectorAll('video')].map(video => {
+                let still;
+                try {
+                    if (video.readyState < 2) throw new Error('no frame yet');
+                    const canvas = h('canvas', { width: video.videoWidth, height: video.videoHeight });
+                    canvas.getContext('2d').drawImage(video, 0, 0);
+                    still = h('img', { class: 'preview-img', alt: '', src: canvas.toDataURL() });
+                } catch {
+                    still = video.poster ? img(video.poster) : placeholder('og:video');
+                }
+                const wrap = h('div', { class: 'preview-img' }, still);
+                video.replaceWith(wrap);
+                return [video, wrap];
+            });
+            return () => swaps.forEach(([video, wrap]) => wrap.replaceWith(video));
+        }
+
         async function renderBlob(node) {
-            await inlineImages(node);
-            return htmlToImage.toBlob(node, { pixelRatio: 2, skipFonts: true, imagePlaceholder: PLACEHOLDER });
+            const restoreVideos = freezeVideos(node);
+            try {
+                await inlineImages(node);
+                return await htmlToImage.toBlob(node, { pixelRatio: 2, skipFonts: true, imagePlaceholder: PLACEHOLDER });
+            } finally {
+                restoreVideos();
+            }
         }
 
         function saveBlob(blob, filename) {
@@ -1065,7 +1150,8 @@
             if (m.description) lines.push(`<meta name="description" content="${escapeAttr(m.description)}">`);
             lines.push('', '<!-- Open Graph / Facebook -->');
             lines.push(`<meta property="og:type" content="${escapeAttr(m.type || 'website')}">`);
-            for (const [prop, val] of [['og:url', m.url], ['og:title', m.title], ['og:description', m.description], ['og:image', m.image], ['og:site_name', m.siteName]]) {
+            for (const [prop, val] of [['og:url', m.url], ['og:title', m.title], ['og:description', m.description], ['og:image', m.image], ['og:video', m.video],
+                ['og:video:type', m.video && m.videoType], ['og:video:width', m.video && m.videoWidth], ['og:video:height', m.video && m.videoHeight], ['og:site_name', m.siteName]]) {
                 if (val) lines.push(`<meta property="${prop}" content="${escapeAttr(val)}">`);
             }
             lines.push('', '<!-- X (Twitter) -->');
@@ -1118,11 +1204,19 @@
             else if (m.description.length < 50) warn(`Description is short (${m.description.length}); aim for 50–160 characters.`);
             else ok(`Description length is good (${m.description.length}).`);
 
-            if (!m.image) bad('No image; most platforms will show none.');
+            if (!m.image && m.video) warn('No ', code('og:image'), '; only iMessage will show the ', code('og:video'), ', other platforms show no image.');
+            else if (!m.image) bad('No image; most platforms will show none.');
             else if (!imageSize) ok(code('og:image'), ' is set (checking size…).');
             else if (imageSize.error) bad(code('og:image'), " couldn't be loaded.");
             else if (imageSize.w < 1200 || imageSize.h < 630) warn(code('og:image'), ` is ${imageSize.w}×${imageSize.h}; 1200×630 or larger is recommended.`);
             else ok(code('og:image'), ` is ${imageSize.w}×${imageSize.h}.`);
+
+            if (m.video) {
+                // iMessage only plays direct video files, not embed pages like YouTube's.
+                const direct = /\.(mp4|m4v|mov)([?#]|$)/i.test(m.video) || /^video\/(mp4|quicktime)/i.test(m.videoType);
+                if (direct) ok(code('og:video'), ' is a direct video file; iMessage plays it inline.');
+                else warn(code('og:video'), " doesn't look like an .mp4 or .mov file; iMessage may not play it.");
+            }
 
             for (const [tag, fallbacks] of EXPECTED_TAGS) {
                 if (hasTag(tag)) continue;

@@ -9,6 +9,7 @@ The current version is shown at the bottom of the page.
 
 Link to a preview directly with `https://ogpreview.github.io/url/<url-encoded link>` (same format as opengraph.xyz) or `?url=<link>`.
 
+- **5.1.0** (2026-11-05): iMessage preview that plays `og:video` inline (click to play), with a compact icon card when there's no image, and an iMessage phone screen in Mobile view; Video URL field, `og:video` tags in generated code, and a check that the video is a direct .mp4/.mov file.
 - **5.0.0** (2026-10-28): Landing page: hero with large URL box and example links, live showcase drawn by the app's preview code, platforms strip, features, how it works, FAQ and a call-to-action band.
 - **4.2.0** (2026-10-28): Mobile view shows a full phone mockup with each app's top bar and gray placeholder content around the link preview; PNG exports include the whole phone.
 - **4.1.0** (2026-10-28): Footer with links to the Open Graph spec, platform sharing guides and official debuggers.
